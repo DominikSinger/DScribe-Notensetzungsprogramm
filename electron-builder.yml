@@ -1,0 +1,35 @@
+appId: com.dscribe.app
+productName: DScribe
+copyright: Copyright © 2025 User
+files:
+  - public/**/*
+  - src/**/*
+  - package.json
+extraResources:
+  - update-spec/**/*
+directories:
+  buildResources: public
+  output: dist
+win:
+  target:
+    - nsis
+  icon: public/icon.ico
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+mac:
+  target:
+    - dmg
+  icon: public/icon.ico
+linux:
+  target:
+    - AppImage
+    - deb
+    - rpm
+  icon: public/icon.ico
+publish:
+  provider: generic
+  url: "https://your-update-server.com/updates/"

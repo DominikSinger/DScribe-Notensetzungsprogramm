@@ -1,0 +1,24 @@
+{
+  "name": "dscribe",
+  "version": "12.0.0",
+  "description": "DScribe – Erweiterte OMR/Audio & Pluginsystem",
+  "main": "src/main.js",
+  "author": "User",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "pack": "echo \"Use electron-builder\"",
+    "dist": "echo \"Use electron-builder\""
+  },
+  "dependencies": {
+    "adm-zip": "0.5.10",
+    "electron-store": "8.1.0",
+    "fs-extra": "11.2.0",
+    "opensheetmusicdisplay": "^1.9.2",
+    "vexflow": "^5.0.0"
+  },
+  "devDependencies": {
+    "electron": "30.0.9",
+    "electron-builder": "^26.0.12"
+  }
+}
