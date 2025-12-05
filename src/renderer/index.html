@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <title>DScribe - Notensatzprogramm</title>
+    <link rel="stylesheet" href="css/main.css">
+    <!-- VexFlow Library -->
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Toolbar -->
+        <div id="toolbar">
+            <div class="toolbar-section">
+                <button id="btn-new" class="toolbar-btn" title="Neues Projekt">
+                    <span class="icon">📄</span>
+                </button>
+                <button id="btn-open" class="toolbar-btn" title="Öffnen">
+                    <span class="icon">📁</span>
+                </button>
+                <button id="btn-save" class="toolbar-btn" title="Speichern">
+                    <span class="icon">💾</span>
+                </button>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-section">
+                <button id="btn-undo" class="toolbar-btn" title="Rückgängig">
+                    <span class="icon">↶</span>
+                </button>
+                <button id="btn-redo" class="toolbar-btn" title="Wiederherstellen">
+                    <span class="icon">↷</span>
+                </button>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-section">
+                <button id="btn-zoom-out" class="toolbar-btn" title="Verkleinern">
+                    <span class="icon">🔍-</span>
+                </button>
+                <span id="zoom-level" class="zoom-display">100%</span>
+                <button id="btn-zoom-in" class="toolbar-btn" title="Vergrößern">
+                    <span class="icon">🔍+</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content">
+            <!-- Left Palette Panel -->
+            <div id="left-palette" class="palette-panel">
+                <div class="palette-section">
+                    <h3>Notenwerte</h3>
+                    <div class="palette-items">
+                        <button class="palette-btn" data-note="whole" title="Ganze Note">𝅝</button>
+                        <button class="palette-btn" data-note="half" title="Halbe Note">𝅗𝅥</button>
+                        <button class="palette-btn active" data-note="quarter" title="Viertel Note">♩</button>
+                        <button class="palette-btn" data-note="eighth" title="Achtel Note">♪</button>
+                        <button class="palette-btn" data-note="sixteenth" title="Sechzehntel Note">𝅘𝅥𝅯</button>
+                        <button class="palette-btn" data-note="thirtysecond" title="32tel Note">𝅘𝅥𝅰</button>
+                        <button class="palette-btn" data-note="sixtyfourth" title="64tel Note">𝅘𝅥𝅱</button>
+                    </div>
+                </div>
+
+                <div class="palette-section">
+                    <h3>Pausen</h3>
+                    <div class="palette-items">
+                        <button class="palette-btn" data-rest="whole" title="Ganze Pause">𝄻</button>
+                        <button class="palette-btn" data-rest="half" title="Halbe Pause">𝄼</button>
+                        <button class="palette-btn" data-rest="quarter" title="Viertel Pause">𝄽</button>
+                        <button class="palette-btn" data-rest="eighth" title="Achtel Pause">𝄾</button>
+                        <button class="palette-btn" data-rest="sixteenth" title="Sechzehntel Pause">𝄿</button>
+                        <button class="palette-btn" data-rest="thirtysecond" title="32tel Pause">𝅀</button>
+                    </div>
+                </div>
+
+                <div class="palette-section">
+                    <h3>Vorzeichen</h3>
+                    <div class="palette-items">
+                        <button class="palette-btn" data-accidental="sharp" title="Kreuz">♯</button>
+                        <button class="palette-btn" data-accidental="flat" title="B">♭</button>
+                        <button class="palette-btn" data-accidental="natural" title="Auflösungszeichen">♮</button>
+                    </div>
+                </div>
+
+                <div class="palette-section">
+                    <h3>Schlüssel</h3>
+                    <div class="palette-items">
+                        <button class="palette-btn" data-clef="treble" title="Violinschlüssel">𝄞</button>
+                        <button class="palette-btn" data-clef="bass" title="Bassschlüssel">𝄢</button>
+                        <button class="palette-btn" data-clef="alto" title="Altschlüssel">𝄡</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score Canvas -->
+            <div id="score-container">
+                <div id="score-header">
+                    <h2 id="score-title-display" contenteditable="true">Unbenannt</h2>
+                    <p id="score-composer-display" contenteditable="true">Komponist</p>
+                </div>
+                <div id="score-canvas"></div>
+                <div id="score-controls">
+                    <button id="btn-add-note" class="score-control-btn">Note hinzufügen (C4)</button>
+                    <button id="btn-add-rest" class="score-control-btn">Pause hinzufügen</button>
+                    <button id="btn-add-measure" class="score-control-btn">Takt hinzufügen</button>
+                </div>
+            </div>
+
+            <!-- Right Properties Panel -->
+            <div id="right-panel" class="palette-panel">
+                <div class="palette-section">
+                    <h3>Eigenschaften</h3>
+                    <div id="properties-content">
+                        <p class="placeholder-text">Wählen Sie ein Element aus</p>
+                    </div>
+                </div>
+
+                <div class="palette-section">
+                    <h3>Projekt-Info</h3>
+                    <div class="project-info">
+                        <div class="info-item">
+                            <label>Titel:</label>
+                            <input type="text" id="project-title" placeholder="Unbenannt">
+                        </div>
+                        <div class="info-item">
+                            <label>Komponist:</label>
+                            <input type="text" id="project-composer" placeholder="">
+                        </div>
+                        <div class="info-item">
+                            <label>Tonart:</label>
+                            <select id="project-key">
+                                <option value="C">C-Dur</option>
+                                <option value="G">G-Dur (1♯)</option>
+                                <option value="D">D-Dur (2♯)</option>
+                                <option value="A">A-Dur (3♯)</option>
+                                <option value="E">E-Dur (4♯)</option>
+                                <option value="B">H-Dur (5♯)</option>
+                                <option value="F#">F♯-Dur (6♯)</option>
+                                <option value="C#">C♯-Dur (7♯)</option>
+                                <option value="F">F-Dur (1♭)</option>
+                                <option value="Bb">B-Dur (2♭)</option>
+                                <option value="Eb">Es-Dur (3♭)</option>
+                                <option value="Ab">As-Dur (4♭)</option>
+                                <option value="Db">Des-Dur (5♭)</option>
+                                <option value="Gb">Ges-Dur (6♭)</option>
+                                <option value="Cb">Ces-Dur (7♭)</option>
+                            </select>
+                        </div>
+                        <div class="info-item">
+                            <label>Taktart:</label>
+                            <select id="project-time">
+                                <option value="4/4">4/4</option>
+                                <option value="3/4">3/4</option>
+                                <option value="2/4">2/4</option>
+                                <option value="6/8">6/8</option>
+                                <option value="3/8">3/8</option>
+                                <option value="5/4">5/4</option>
+                                <option value="7/8">7/8</option>
+                            </select>
+                        </div>
+                        <div class="info-item">
+                            <label>Tempo (BPM):</label>
+                            <input type="number" id="project-tempo" value="120" min="20" max="300">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transport Controls -->
+        <div id="transport">
+            <div class="transport-controls">
+                <button id="btn-rewind" class="transport-btn" title="Zum Anfang">⏮</button>
+                <button id="btn-prev" class="transport-btn" title="Vorheriger Takt">⏪</button>
+                <button id="btn-play" class="transport-btn transport-btn-main" title="Abspielen">▶</button>
+                <button id="btn-stop" class="transport-btn" title="Stop">⏹</button>
+                <button id="btn-next" class="transport-btn" title="Nächster Takt">⏩</button>
+            </div>
+            
+            <div class="transport-info">
+                <span id="playback-time">00:00</span>
+                <span class="separator">/</span>
+                <span id="playback-duration">00:00</span>
+            </div>
+            
+            <div class="transport-settings">
+                <label>
+                    <input type="checkbox" id="metronome-toggle">
+                    Metronom
+                </label>
+                <label>Tempo:</label>
+                <input type="number" id="tempo-input" value="120" min="20" max="300" class="tempo-input">
+                <label>BPM</label>
+            </div>
+            
+            <div class="transport-instrument">
+                <label>Instrument:</label>
+                <select id="instrument-select" class="instrument-select">
+                    <option value="piano" selected>Piano</option>
+                    <option value="organ">Organ</option>
+                    <option value="guitar">Guitar</option>
+                    <option value="strings">Strings</option>
+                    <option value="flute">Flute</option>
+                    <option value="brass">Brass</option>
+                    <option value="bass">Bass</option>
+                </select>
+            </div>
+            
+            <div class="transport-volume">
+                <label>🔊</label>
+                <input type="range" id="volume-slider" min="0" max="100" value="70" class="volume-slider">
+                <span id="volume-display">70%</span>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="status-bar">
+            <span id="status-text">Bereit</span>
+            <span id="autosave-status">Autosave: aktiviert</span>
+            <span id="version-info">v12.0.0</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/notation-engine.js"></script>
+    <script src="js/playback-engine.js"></script>
+</body>
+</html>

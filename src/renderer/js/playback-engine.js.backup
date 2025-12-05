@@ -1,0 +1,218 @@
+// PATH: src/renderer/js/playback-engine.js
+// DScribe - Playback Engine (WebAudio)
+
+class PlaybackEngine {
+    constructor() {
+        this.audioContext = null;
+        this.masterGain = null;
+        this.tempo = 120;
+        this.volume = 0.7;
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.currentTime = 0;
+        this.metronomeEnabled = false;
+        this.scheduledNotes = [];
+        
+        this.initializeAudio();
+    }
+
+    initializeAudio() {
+        try {
+            // Create audio context
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create master gain node
+            this.masterGain = this.audioContext.createGain();
+            this.masterGain.gain.value = this.volume;
+            this.masterGain.connect(this.audioContext.destination);
+            
+            console.log('Audio context initialized');
+        } catch (error) {
+            console.error('Failed to initialize audio context:', error);
+        }
+    }
+
+    play(notes = []) {
+        if (!this.audioContext) {
+            console.error('Audio context not initialized');
+            return;
+        }
+        
+        // Resume audio context if suspended
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+        
+        this.isPlaying = true;
+        this.isPaused = false;
+        
+        console.log('Playing', notes.length, 'notes at tempo', this.tempo);
+        
+        // TODO: Implement full playback scheduling in Phase 3
+        // For now, play a simple test tone
+        this.playTestTone();
+    }
+
+    pause() {
+        this.isPaused = true;
+        this.isPlaying = false;
+        
+        // Stop all scheduled notes
+        this.stopAllNotes();
+        
+        console.log('Playback paused');
+    }
+
+    stop() {
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.currentTime = 0;
+        
+        // Stop all scheduled notes
+        this.stopAllNotes();
+        
+        console.log('Playback stopped');
+    }
+
+    rewind() {
+        this.currentTime = 0;
+        console.log('Rewound to start');
+    }
+
+    previousMeasure() {
+        // TODO: Implement measure navigation
+        console.log('TODO: Previous measure');
+    }
+
+    nextMeasure() {
+        // TODO: Implement measure navigation
+        console.log('TODO: Next measure');
+    }
+
+    setTempo(bpm) {
+        this.tempo = Math.max(20, Math.min(300, bpm));
+        console.log('Tempo set to', this.tempo, 'BPM');
+    }
+
+    setVolume(volume) {
+        this.volume = Math.max(0, Math.min(1, volume));
+        if (this.masterGain) {
+            this.masterGain.gain.value = this.volume;
+        }
+        console.log('Volume set to', Math.round(this.volume * 100), '%');
+    }
+
+    setMetronome(enabled) {
+        this.metronomeEnabled = enabled;
+        console.log('Metronome', enabled ? 'enabled' : 'disabled');
+    }
+
+    playTestTone() {
+        if (!this.audioContext) return;
+        
+        const now = this.audioContext.currentTime;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 440; // A4
+        
+        gainNode.gain.value = 0.3;
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        
+        oscillator.start(now);
+        oscillator.stop(now + 0.5);
+        
+        console.log('Played test tone');
+    }
+
+    playNote(frequency, duration, startTime = 0) {
+        if (!this.audioContext) return;
+        
+        const now = this.audioContext.currentTime + startTime;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.value = frequency;
+        
+        // ADSR envelope (simplified)
+        const attack = 0.01;
+        const decay = 0.1;
+        const sustain = 0.7;
+        const release = 0.1;
+        
+        gainNode.gain.value = 0;
+        gainNode.gain.linearRampToValueAtTime(0.3, now + attack);
+        gainNode.gain.linearRampToValueAtTime(0.3 * sustain, now + attack + decay);
+        gainNode.gain.setValueAtTime(0.3 * sustain, now + duration - release);
+        gainNode.gain.linearRampToValueAtTime(0, now + duration);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        
+        oscillator.start(now);
+        oscillator.stop(now + duration);
+        
+        this.scheduledNotes.push({ oscillator, gainNode, stopTime: now + duration });
+    }
+
+    stopAllNotes() {
+        const now = this.audioContext ? this.audioContext.currentTime : 0;
+        
+        this.scheduledNotes.forEach(({ oscillator, gainNode, stopTime }) => {
+            try {
+                if (stopTime > now) {
+                    gainNode.gain.cancelScheduledValues(now);
+                    gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.01);
+                    oscillator.stop(now + 0.01);
+                }
+            } catch (error) {
+                // Note already stopped
+            }
+        });
+        
+        this.scheduledNotes = [];
+    }
+
+    // MIDI note number to frequency conversion
+    noteToFrequency(midiNote) {
+        return 440 * Math.pow(2, (midiNote - 69) / 12);
+    }
+
+    // Note name to MIDI number
+    noteNameToMidi(noteName) {
+        const noteMap = {
+            'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+            'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+            'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+        };
+        
+        const match = noteName.match(/^([A-G][#b]?)(\d+)$/);
+        if (!match) return 60; // Default to middle C
+        
+        const [, note, octave] = match;
+        const noteValue = noteMap[note] || 0;
+        const octaveValue = parseInt(octave) || 4;
+        
+        return noteValue + (octaveValue + 1) * 12;
+    }
+
+    // Duration in beats to seconds
+    beatsToSeconds(beats) {
+        return (beats * 60) / this.tempo;
+    }
+
+    // Cleanup
+    destroy() {
+        this.stop();
+        if (this.audioContext) {
+            this.audioContext.close();
+            this.audioContext = null;
+        }
+    }
+}

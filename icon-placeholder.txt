@@ -1,0 +1,16 @@
+# PATH: icon.ico (Placeholder)
+# This is a placeholder comment. 
+# The actual icon.ico file should be provided by the user.
+# 
+# For now, create a simple icon using ImageMagick or similar tool:
+# convert -size 256x256 xc:blue -font Arial -pointsize 120 -gravity center -fill white -annotate +0+0 "D" icon.ico
+#
+# Or download a music/note icon from a free icon site like:
+# - https://icons8.com
+# - https://www.flaticon.com
+# - https://fontawesome.com
+#
+# Ensure the icon is:
+# - 256x256 pixels or multi-resolution ICO
+# - Transparent background preferred
+# - Professional music-related design
