@@ -783,8 +783,71 @@ class DScribeApp {
     }
     
     async handleExportMP3() {
-        alert('MP3-Export\n\nMP3-Export erfordert Audio-Recording-Funktionalität.\nAktuell können Sie MIDI exportieren und mit einem externen Tool in MP3 konvertieren.\n\nEmpfohlene Tools:\n- Audacity (kostenlos)\n- FL Studio\n- Logic Pro');
-        this.setStatus('MP3-Export nicht verfügbar');
+        try {
+            // Get audio buffer from playback engine
+            const audioBuffer = await this.playbackEngine.renderToBuffer();
+            
+            if (!audioBuffer) {
+                alert('Fehler: Kein Audio zum Exportieren verfügbar. Bitte stellen Sie sicher, dass Noten im Projekt vorhanden sind.');
+                return;
+            }
+            
+            // Show save dialog
+            const result = await window.electron.dialog.showSaveDialog({
+                title: 'Als MP3/WAV exportieren',
+                defaultPath: `${this.projectManager.getCurrentProjectName() || 'composition'}.wav`,
+                filters: [
+                    { name: 'Audio Files', extensions: ['wav', 'mp3'] }
+                ]
+            });
+            
+            if (result.canceled || !result.filePath) {
+                return;
+            }
+            
+            this.setStatus('Exportiere Audio...');
+            
+            // Export via export manager
+            const exportResult = await window.electron.export.toMP3(
+                this.projectManager.getProjectData(),
+                result.filePath,
+                {
+                    sampleRate: audioBuffer.sampleRate,
+                    numberOfChannels: audioBuffer.numberOfChannels,
+                    length: audioBuffer.length,
+                    channelData: Array.from({ length: audioBuffer.numberOfChannels }, (_, i) => 
+                        Array.from(audioBuffer.getChannelData(i))
+                    )
+                }
+            );
+            
+            if (exportResult.success) {
+                if (exportResult.format === 'WAV') {
+                    this.setStatus('Als WAV exportiert');
+                    const convert = confirm(
+                        `Audio als WAV exportiert: ${exportResult.path}\n\n` +
+                        `MP3-Encodierung erfordert zusätzliche Abhängigkeiten.\n` +
+                        `Möchten Sie Anweisungen zur Konvertierung sehen?`
+                    );
+                    
+                    if (convert) {
+                        alert(
+                            `Um WAV zu MP3 zu konvertieren, verwenden Sie:\n\n` +
+                            `ffmpeg -i "${exportResult.path}" -codec:a libmp3lame -qscale:a 2 output.mp3\n\n` +
+                            `Oder verwenden Sie einen Online-Konverter wie cloudconvert.com`
+                        );
+                    }
+                } else {
+                    this.setStatus('MP3 erfolgreich exportiert');
+                    alert(`MP3 erfolgreich exportiert: ${exportResult.path}`);
+                }
+            }
+            
+        } catch (error) {
+            console.error('MP3 export error:', error);
+            alert(`Fehler beim MP3-Export: ${error.message}`);
+            this.setStatus('MP3-Export fehlgeschlagen');
+        }
     }    // Edit operations (Phase 7 - Undo/Redo System)
     saveState(actionDescription) {
         const state = {

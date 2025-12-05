@@ -718,6 +718,31 @@ function setupIpcHandlers() {
     return await global.exportManager.exportToMusicXML(projectData, outputPath);
   });
   
+  ipcMain.handle('export:mp3', async (event, projectData, outputPath, audioBufferData) => {
+    try {
+      // Reconstruct AudioBuffer from serialized data
+      const audioContext = new (require('web-audio-api').AudioContext)();
+      const audioBuffer = audioContext.createBuffer(
+        audioBufferData.numberOfChannels,
+        audioBufferData.length,
+        audioBufferData.sampleRate
+      );
+      
+      // Copy channel data
+      for (let channel = 0; channel < audioBufferData.numberOfChannels; channel++) {
+        const channelData = audioBuffer.getChannelData(channel);
+        for (let i = 0; i < audioBufferData.length; i++) {
+          channelData[i] = audioBufferData.channelData[channel][i];
+        }
+      }
+      
+      return await global.exportManager.exportToMP3(projectData, outputPath, audioBuffer);
+    } catch (error) {
+      logger.error('MP3 export IPC error:', error);
+      throw error;
+    }
+  });
+  
   // Import handlers (Phase 4)
   ipcMain.handle('import:midi', async (event, filePath) => {
     return await global.importManager.importFromMIDI(filePath);

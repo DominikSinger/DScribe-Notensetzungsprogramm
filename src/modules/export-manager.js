@@ -378,6 +378,131 @@ ${duration.dot ? '        <dot/>\n' : ''}      </note>
     }
 
     /**
+     * Export project to MP3 audio file (Phase 4)
+     * @param {Object} projectData - Project data with measures and settings
+     * @param {string} outputPath - Full path to save MP3
+     * @param {Object} audioBuffer - Rendered audio buffer from PlaybackEngine
+     */
+    async exportToMP3(projectData, outputPath, audioBuffer) {
+        try {
+            this.logger.info('Exporting to MP3:', outputPath);
+            
+            if (!audioBuffer) {
+                throw new Error('Audio buffer required for MP3 export');
+            }
+            
+            // Convert AudioBuffer to WAV format first (intermediate step)
+            const wavBuffer = this.audioBufferToWav(audioBuffer);
+            
+            // For MP3 encoding, we need an encoder
+            // In production, you would use libraries like:
+            // - lame-encoder
+            // - lamejs
+            // - node-lame
+            
+            // For now, we'll save as WAV and provide instructions
+            const wavPath = outputPath.replace(/\.mp3$/i, '.wav');
+            await fs.writeFile(wavPath, Buffer.from(wavBuffer));
+            
+            this.logger.info('Audio exported as WAV (MP3 encoding requires additional setup):', wavPath);
+            
+            return {
+                success: true,
+                path: wavPath,
+                format: 'WAV',
+                note: 'MP3 encoding requires additional dependencies. WAV file created instead.',
+                instructions: 'To convert to MP3, use ffmpeg: ffmpeg -i output.wav -codec:a libmp3lame -qscale:a 2 output.mp3'
+            };
+            
+        } catch (error) {
+            this.logger.error('MP3 export failed:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Convert AudioBuffer to WAV format
+     * @param {AudioBuffer} audioBuffer - Web Audio API AudioBuffer
+     * @returns {ArrayBuffer} WAV file data
+     */
+    audioBufferToWav(audioBuffer) {
+        const numberOfChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const format = 1; // PCM
+        const bitDepth = 16;
+        
+        const bytesPerSample = bitDepth / 8;
+        const blockAlign = numberOfChannels * bytesPerSample;
+        
+        const data = [];
+        for (let i = 0; i < numberOfChannels; i++) {
+            data.push(audioBuffer.getChannelData(i));
+        }
+        
+        const interleaved = this.interleave(data);
+        const dataLength = interleaved.length * bytesPerSample;
+        const buffer = new ArrayBuffer(44 + dataLength);
+        const view = new DataView(buffer);
+        
+        // WAV header
+        this.writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + dataLength, true);
+        this.writeString(view, 8, 'WAVE');
+        this.writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true); // fmt chunk size
+        view.setUint16(20, format, true);
+        view.setUint16(22, numberOfChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * blockAlign, true); // byte rate
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bitDepth, true);
+        this.writeString(view, 36, 'data');
+        view.setUint32(40, dataLength, true);
+        
+        // Write audio data
+        this.floatTo16BitPCM(view, 44, interleaved);
+        
+        return buffer;
+    }
+    
+    /**
+     * Interleave multiple audio channels
+     */
+    interleave(channelData) {
+        const length = channelData[0].length;
+        const numberOfChannels = channelData.length;
+        const result = new Float32Array(length * numberOfChannels);
+        
+        let offset = 0;
+        for (let i = 0; i < length; i++) {
+            for (let channel = 0; channel < numberOfChannels; channel++) {
+                result[offset++] = channelData[channel][i];
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Convert float samples to 16-bit PCM
+     */
+    floatTo16BitPCM(view, offset, input) {
+        for (let i = 0; i < input.length; i++, offset += 2) {
+            const s = Math.max(-1, Math.min(1, input[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+    }
+    
+    /**
+     * Write string to DataView
+     */
+    writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+
+    /**
      * Helper: Escape XML special characters
      */
     escapeXml(unsafe) {

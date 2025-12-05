@@ -399,6 +399,110 @@ class PlaybackEngine {
         return parseInt((timeSig || '4/4').split('/')[1]) || 4;
     }
 
+    /**
+     * Render entire composition to AudioBuffer for export (Phase 4)
+     * @returns {Promise<AudioBuffer>} Rendered audio buffer
+     */
+    async renderToBuffer() {
+        try {
+            if (!this.measures || this.measures.length === 0) {
+                throw new Error('No measures to render');
+            }
+            
+            // Calculate total duration
+            const totalDuration = this.calculateTotalDuration();
+            
+            if (totalDuration <= 0) {
+                throw new Error('Invalid duration calculated');
+            }
+            
+            // Create offline audio context for rendering
+            const sampleRate = 44100;
+            const offlineContext = new OfflineAudioContext(2, sampleRate * totalDuration, sampleRate);
+            
+            // Schedule all notes
+            let currentTime = 0;
+            
+            for (const measure of this.measures) {
+                const notes = measure.notes || [];
+                
+                for (const note of notes) {
+                    if (note.keys && note.keys.length > 0) {
+                        const duration = this.getNoteDuration(note.duration, measure.timeSignature);
+                        
+                        // Play each note in the chord
+                        for (const key of note.keys) {
+                            const frequency = this.getFrequency(key);
+                            
+                            // Create oscillator
+                            const oscillator = offlineContext.createOscillator();
+                            const gainNode = offlineContext.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(offlineContext.destination);
+                            
+                            oscillator.type = this.waveform;
+                            oscillator.frequency.setValueAtTime(frequency, currentTime);
+                            
+                            // Envelope
+                            gainNode.gain.setValueAtTime(0, currentTime);
+                            gainNode.gain.linearRampToValueAtTime(0.3, currentTime + 0.01);
+                            gainNode.gain.exponentialRampToValueAtTime(0.2, currentTime + duration * 0.3);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + duration);
+                            
+                            oscillator.start(currentTime);
+                            oscillator.stop(currentTime + duration);
+                        }
+                        
+                        currentTime += duration;
+                    }
+                }
+            }
+            
+            // Render
+            const audioBuffer = await offlineContext.startRendering();
+            console.log('Audio rendered:', audioBuffer.duration, 'seconds');
+            
+            return audioBuffer;
+            
+        } catch (error) {
+            console.error('Error rendering audio buffer:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Calculate total duration of composition
+     * @returns {number} Duration in seconds
+     */
+    calculateTotalDuration() {
+        let totalDuration = 0;
+        
+        for (const measure of this.measures) {
+            const notes = measure.notes || [];
+            let measureDuration = 0;
+            
+            for (const note of notes) {
+                if (note.keys && note.keys.length > 0) {
+                    const duration = this.getNoteDuration(note.duration, measure.timeSignature);
+                    measureDuration += duration;
+                }
+            }
+            
+            // If measure has no notes, use default measure duration based on time signature
+            if (measureDuration === 0) {
+                const beats = this.getBeatsFromTimeSignature(measure.timeSignature);
+                const beatValue = this.getBeatValueFromTimeSignature(measure.timeSignature);
+                const secondsPerBeat = 60 / this.tempo * (4 / beatValue);
+                measureDuration = beats * secondsPerBeat;
+            }
+            
+            totalDuration += measureDuration;
+        }
+        
+        return totalDuration;
+    }
+
     // Cleanup
     destroy() {
         this.stop();

@@ -49,7 +49,9 @@ contextBridge.exposeInMainWorld('electron', {
     toMIDI: (projectData, outputPath) => 
       ipcRenderer.invoke('export:midi', projectData, outputPath),
     toMusicXML: (projectData, outputPath) => 
-      ipcRenderer.invoke('export:musicxml', projectData, outputPath)
+      ipcRenderer.invoke('export:musicxml', projectData, outputPath),
+    toMP3: (projectData, outputPath, audioBufferData) => 
+      ipcRenderer.invoke('export:mp3', projectData, outputPath, audioBufferData)
   },
 
   // Import API (Phase 4)
