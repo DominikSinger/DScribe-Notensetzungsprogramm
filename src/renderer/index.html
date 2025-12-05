@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <title>DScribe - Notensatzprogramm</title>
+    <link rel="stylesheet" href="css/main.css">
+    <!-- VexFlow Library -->
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Toolbar -->
+        <div id="toolbar">
+            <div class="toolbar-section">
+                <button id="btn-new" class="toolbar-btn" title="Neues Projekt">
+                    <span class="icon">📄</span>
+                </button>
+                <button id="btn-open" class="toolbar-btn" title="Öffnen">
+                    <span class="icon">📁</span>
+                </button>
+                <button id="btn-save" class="toolbar-btn" title="Speichern">
+                    <span class="icon">💾</span>
+                </button>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-section">
+                <button id="btn-undo" class="toolbar-btn" title="Rückgängig">
+                    <span class="icon">↶</span>
+                </button>
+                <button id="btn-redo" class="toolbar-btn" title="Wiederherstellen">
+                    <span class="icon">↷</span>
+                </button>
+            </div>
+            
+            <div class="toolbar-separator"></div>
+            
+            <div class="toolbar-section">
+                <button id="btn-zoom-out" class="toolbar-btn" title="Verkleinern">
+                    <span class="icon">🔍-</span>
+                </button>
+                <span id="zoom-level" class="zoom-display">100%</span>
+                <button id="btn-zoom-in" class="toolbar-btn" title="Vergrößern">
+                    <span class="icon">🔍+</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Tab Bar (Phase 7) -->
+        <div id="tab-bar">
+            <div id="tab-list">
+                <div class="tab active" data-tab-index="0">
+                    <span class="tab-title">Unbenannt</span>
+                    <span class="tab-close" title="Schließen">×</span>
+                </div>
+            </div>
+            <button id="btn-new-tab" class="new-tab-btn" title="Neuer Tab">+</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content">
+            <!-- Left Palette Panel -->
+            <div id="left-palette" class="palette-panel">
+                <div class="palette-section">
+                    <h3>Notenwerte</h3>
+                    <div class="palette-items">
+                        <button class="palette-btn" data-note="whole" title="Ganze Note">𝅝</button>
+                        <button class="palette-btn" data-note="half" title="Halbe Note">𝅗𝅥</button>
+                        <button class="palette-btn active" data-note="quarter" title="Viertel Note">♩</button>
+                        <button class="palette-btn" data-note="eighth" title="Achtel Note">♪</button>
+                        <button class="palette-btn" data-note="sixteenth" title="Sechzehntel Note">𝅘𝅥𝅯</button>
+                        <button class="palette-btn" data-note="thirtysecond" title="32tel Note">𝅘𝅥𝅰</button>
+                        <button class="palette-btn" data-note="sixtyfourth" title="64tel Note">𝅘𝅥𝅱</button>
+                    </div>
+                </div>
+
+                <div class="palette-section">
+                    <h3>Pausen</h3>
+                    <div class="palette-items">
+                        <button class="palette-btn" data-rest="whole" title="Ganze Pause">𝄻</button>
+                        <button class="palette-btn" data-rest="half" title="Halbe Pause">𝄼</button>
+                        <button class="palette-btn" data-rest="quarter" title="Viertel Pause">𝄽</button>
+                        <button class="palette-btn" data-rest="eighth" title="Achtel Pause">𝄾</button>
+                        <button class="palette-btn" data-rest="sixteenth" title="Sechzehntel Pause">𝄿</button>
+                        <button class="palette-btn" data-rest="thirtysecond" title="32tel Pause">𝅀</button>
+                    </div>
+                </div>
+
+                <div class="palette-section">
+                    <h3>Vorzeichen</h3>
+                    <div class="palette-items">
+                        <button class="palette-btn" data-accidental="sharp" title="Kreuz">♯</button>
+                        <button class="palette-btn" data-accidental="flat" title="B">♭</button>
+                        <button class="palette-btn" data-accidental="natural" title="Auflösungszeichen">♮</button>
+                    </div>
+                </div>
+
+                <div class="palette-section">
+                    <h3>Schlüssel</h3>
+                    <div class="palette-items">
+                        <button class="palette-btn" data-clef="treble" title="Violinschlüssel">𝄞</button>
+                        <button class="palette-btn" data-clef="bass" title="Bassschlüssel">𝄢</button>
+                        <button class="palette-btn" data-clef="alto" title="Altschlüssel">𝄡</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score Canvas -->
+            <div id="score-container">
+                <div id="score-header">
+                    <h2 id="score-title-display" contenteditable="true">Unbenannt</h2>
+                    <p id="score-composer-display" contenteditable="true">Komponist</p>
+                </div>
+                <div id="score-canvas"></div>
+                <div id="score-controls">
+                    <button id="btn-add-note" class="score-control-btn">Note hinzufügen (C4)</button>
+                    <button id="btn-add-rest" class="score-control-btn">Pause hinzufügen</button>
+                    <button id="btn-add-measure" class="score-control-btn">Takt hinzufügen</button>
+                </div>
+            </div>
+            
+            <!-- Context Menu (Phase 7) -->
+            <div id="context-menu" class="context-menu" style="display: none;">
+                <div class="context-menu-item" data-action="add-note">
+                    <span>Note hinzufügen</span>
+                    <span class="shortcut-hint">N</span>
+                </div>
+                <div class="context-menu-item" data-action="add-rest">
+                    <span>Pause hinzufügen</span>
+                    <span class="shortcut-hint">R</span>
+                </div>
+                <div class="context-menu-item" data-action="add-measure">
+                    <span>Takt hinzufügen</span>
+                    <span class="shortcut-hint">M</span>
+                </div>
+                <div class="context-menu-separator"></div>
+                <div class="context-menu-item" data-action="cut">
+                    <span>Ausschneiden</span>
+                    <span class="shortcut-hint">Strg+X</span>
+                </div>
+                <div class="context-menu-item" data-action="copy">
+                    <span>Kopieren</span>
+                    <span class="shortcut-hint">Strg+C</span>
+                </div>
+                <div class="context-menu-item" data-action="paste">
+                    <span>Einfügen</span>
+                    <span class="shortcut-hint">Strg+V</span>
+                </div>
+                <div class="context-menu-item" data-action="delete">
+                    <span>Löschen</span>
+                    <span class="shortcut-hint">Entf</span>
+                </div>
+                <div class="context-menu-separator"></div>
+                <div class="context-menu-item" data-action="transpose">
+                    <span>Transponieren...</span>
+                </div>
+                <div class="context-menu-item" data-action="add-chord">
+                    <span>Akkord einfügen...</span>
+                </div>
+                <div class="context-menu-item" data-action="harmonize">
+                    <span>Harmonisieren</span>
+                </div>
+            </div>
+
+            <!-- Right Properties Panel -->
+            <div id="right-panel" class="palette-panel">
+                <div class="palette-section">
+                    <h3>Eigenschaften</h3>
+                    <div id="properties-content">
+                        <p class="placeholder-text">Wählen Sie ein Element aus</p>
+                    </div>
+                </div>
+
+                <div class="palette-section">
+                    <h3>Projekt-Info</h3>
+                    <div class="project-info">
+                        <div class="info-item">
+                            <label>Titel:</label>
+                            <input type="text" id="project-title" placeholder="Unbenannt">
+                        </div>
+                        <div class="info-item">
+                            <label>Komponist:</label>
+                            <input type="text" id="project-composer" placeholder="">
+                        </div>
+                        <div class="info-item">
+                            <label>Tonart:</label>
+                            <select id="project-key">
+                                <option value="C">C-Dur</option>
+                                <option value="G">G-Dur (1♯)</option>
+                                <option value="D">D-Dur (2♯)</option>
+                                <option value="A">A-Dur (3♯)</option>
+                                <option value="E">E-Dur (4♯)</option>
+                                <option value="B">H-Dur (5♯)</option>
+                                <option value="F#">F♯-Dur (6♯)</option>
+                                <option value="C#">C♯-Dur (7♯)</option>
+                                <option value="F">F-Dur (1♭)</option>
+                                <option value="Bb">B-Dur (2♭)</option>
+                                <option value="Eb">Es-Dur (3♭)</option>
+                                <option value="Ab">As-Dur (4♭)</option>
+                                <option value="Db">Des-Dur (5♭)</option>
+                                <option value="Gb">Ges-Dur (6♭)</option>
+                                <option value="Cb">Ces-Dur (7♭)</option>
+                            </select>
+                        </div>
+                        <div class="info-item">
+                            <label>Taktart:</label>
+                            <select id="project-time">
+                                <option value="4/4">4/4</option>
+                                <option value="3/4">3/4</option>
+                                <option value="2/4">2/4</option>
+                                <option value="6/8">6/8</option>
+                                <option value="3/8">3/8</option>
+                                <option value="5/4">5/4</option>
+                                <option value="7/8">7/8</option>
+                            </select>
+                        </div>
+                        <div class="info-item">
+                            <label>Tempo (BPM):</label>
+                            <input type="number" id="project-tempo" value="120" min="20" max="300">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transport Controls -->
+        <div id="transport">
+            <div class="transport-controls">
+                <button id="btn-rewind" class="transport-btn" title="Zum Anfang">⏮</button>
+                <button id="btn-prev" class="transport-btn" title="Vorheriger Takt">⏪</button>
+                <button id="btn-play" class="transport-btn transport-btn-main" title="Abspielen">▶</button>
+                <button id="btn-stop" class="transport-btn" title="Stop">⏹</button>
+                <button id="btn-next" class="transport-btn" title="Nächster Takt">⏩</button>
+            </div>
+            
+            <div class="transport-info">
+                <span id="playback-time">00:00</span>
+                <span class="separator">/</span>
+                <span id="playback-duration">00:00</span>
+            </div>
+            
+            <div class="transport-settings">
+                <label>
+                    <input type="checkbox" id="metronome-toggle">
+                    Metronom
+                </label>
+                <label>Tempo:</label>
+                <input type="number" id="tempo-input" value="120" min="20" max="300" class="tempo-input">
+                <label>BPM</label>
+            </div>
+            
+            <div class="transport-instrument">
+                <label>Instrument:</label>
+                <select id="instrument-select" class="instrument-select">
+                    <option value="piano" selected>Piano</option>
+                    <option value="organ">Organ</option>
+                    <option value="guitar">Guitar</option>
+                    <option value="strings">Strings</option>
+                    <option value="flute">Flute</option>
+                    <option value="brass">Brass</option>
+                    <option value="bass">Bass</option>
+                </select>
+            </div>
+            
+            <div class="transport-volume">
+                <label>🔊</label>
+                <input type="range" id="volume-slider" min="0" max="100" value="70" class="volume-slider">
+                <span id="volume-display">70%</span>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="status-bar">
+            <span id="status-text">Bereit</span>
+            <span id="autosave-status">Autosave: aktiviert</span>
+            <span id="version-info">v12.0.0</span>
+        </div>
+    </div>
+
+    <!-- Audio Analysis Modal (Phase 5) -->
+    <div id="audio-analysis-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog audio-analysis-dialog">
+            <h2>Audio-Analyse</h2>
+            <div class="audio-analysis-content">
+                <div class="analysis-controls">
+                    <button id="btn-start-mic" class="analysis-btn">🎤 Mikrofon starten</button>
+                    <button id="btn-stop-mic" class="analysis-btn" disabled>⏹ Mikrofon stoppen</button>
+                    <button id="btn-import-audio" class="analysis-btn">📁 Audio-Datei importieren</button>
+                </div>
+                
+                <div class="pitch-display">
+                    <div class="pitch-label">Erkannte Note:</div>
+                    <div id="detected-note" class="detected-note">-</div>
+                    <div id="detected-frequency" class="detected-frequency">- Hz</div>
+                </div>
+                
+                <canvas id="audio-visualizer" width="600" height="200"></canvas>
+                
+                <div class="analysis-actions">
+                    <button id="btn-add-detected-note" class="btn-primary" disabled>Note hinzufügen</button>
+                    <button id="btn-close-analysis" class="btn-secondary">Schließen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transpose Dialog (Phase 6) -->
+    <div id="transpose-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog">
+            <h2>Transponieren</h2>
+            <div class="transpose-content">
+                <div class="transpose-option">
+                    <label>Transposition:</label>
+                    <select id="transpose-interval">
+                        <option value="-12">Oktave nach unten</option>
+                        <option value="-7">Quinte nach unten</option>
+                        <option value="-5">Quarte nach unten</option>
+                        <option value="-2">Ganzton nach unten</option>
+                        <option value="-1">Halbton nach unten</option>
+                        <option value="0" selected>Keine</option>
+                        <option value="1">Halbton nach oben</option>
+                        <option value="2">Ganzton nach oben</option>
+                        <option value="5">Quarte nach oben</option>
+                        <option value="7">Quinte nach oben</option>
+                        <option value="12">Oktave nach oben</option>
+                    </select>
+                </div>
+                <div class="transpose-option">
+                    <label>
+                        <input type="checkbox" id="prefer-flats">
+                        ♭ bevorzugen (statt ♯)
+                    </label>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="btn-primary" id="btn-apply-transpose">Anwenden</button>
+                <button class="btn-secondary" id="btn-cancel-transpose">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chord Generator Dialog (Phase 6) -->
+    <div id="chord-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog">
+            <h2>Akkord generieren</h2>
+            <div class="chord-content">
+                <div class="chord-option">
+                    <label>Grundton:</label>
+                    <select id="chord-root">
+                        <option value="C">C</option>
+                        <option value="C#">C#/Db</option>
+                        <option value="D">D</option>
+                        <option value="D#">D#/Eb</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                        <option value="F#">F#/Gb</option>
+                        <option value="G">G</option>
+                        <option value="G#">G#/Ab</option>
+                        <option value="A">A</option>
+                        <option value="A#">A#/Bb</option>
+                        <option value="B">B</option>
+                    </select>
+                </div>
+                <div class="chord-option">
+                    <label>Akkordtyp:</label>
+                    <select id="chord-type">
+                        <option value="major">Dur</option>
+                        <option value="minor">Moll</option>
+                        <option value="diminished">Vermindert</option>
+                        <option value="augmented">Übermäßig</option>
+                        <option value="sus2">Sus2</option>
+                        <option value="sus4">Sus4</option>
+                        <option value="major7">Maj7</option>
+                        <option value="minor7">m7</option>
+                        <option value="dominant7">7</option>
+                        <option value="diminished7">dim7</option>
+                    </select>
+                </div>
+                <div class="chord-option">
+                    <label>Oktave:</label>
+                    <input type="number" id="chord-octave" min="2" max="6" value="4">
+                </div>
+                <div id="chord-preview" class="chord-preview"></div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="btn-primary" id="btn-add-chord">Hinzufügen</button>
+                <button class="btn-secondary" id="btn-cancel-chord">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guitar TAB Dialog (Phase 6) -->
+    <div id="guitar-tab-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog guitar-tab-dialog">
+            <h2>Gitarren-Tabulatur</h2>
+            <div class="guitar-tab-content">
+                <div class="tab-options">
+                    <label>Stimmung:</label>
+                    <select id="guitar-tuning">
+                        <option value="standard" selected>Standard (EADGBE)</option>
+                        <option value="dropD">Drop D (DADGBE)</option>
+                        <option value="halfStep">Halber Schritt tiefer</option>
+                    </select>
+                </div>
+                <div id="tab-display" class="tab-display">
+                    <!-- TAB will be generated here -->
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="btn-primary" id="btn-export-tab">Exportieren</button>
+                <button class="btn-secondary" id="btn-close-tab">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Dialog (Phase 7) -->
+    <div id="shortcuts-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog shortcuts-dialog">
+            <h2>Tastaturkürzel</h2>
+            <div class="shortcuts-content">
+                <div class="shortcuts-section">
+                    <h3>Datei</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>Strg</kbd> + <kbd>N</kbd></td><td>Neue Partitur</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>O</kbd></td><td>Öffnen</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>S</kbd></td><td>Speichern</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></td><td>Speichern unter</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Bearbeiten</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>Strg</kbd> + <kbd>Z</kbd></td><td>Rückgängig</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>Y</kbd> / <kbd>Strg</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></td><td>Wiederherstellen</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>X</kbd></td><td>Ausschneiden</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>C</kbd></td><td>Kopieren</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>V</kbd></td><td>Einfügen</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>A</kbd></td><td>Alles auswählen</td></tr>
+                        <tr><td><kbd>Entf</kbd></td><td>Löschen</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Ansicht</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>Strg</kbd> + <kbd>+</kbd></td><td>Vergrößern</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>-</kbd></td><td>Verkleinern</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>0</kbd></td><td>Zoom zurücksetzen</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd></td><td>Dark Mode umschalten</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Wiedergabe</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>Leertaste</kbd></td><td>Abspielen/Pause</td></tr>
+                        <tr><td><kbd>Esc</kbd></td><td>Stopp</td></tr>
+                        <tr><td><kbd>Pos1</kbd></td><td>Zurückspulen</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Noteneingabe</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>N</kbd></td><td>Note hinzufügen</td></tr>
+                        <tr><td><kbd>R</kbd></td><td>Pause hinzufügen</td></tr>
+                        <tr><td><kbd>M</kbd></td><td>Takt hinzufügen</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Hilfe</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>F1</kbd></td><td>Tastaturkürzel anzeigen</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="btn-primary" id="btn-close-shortcuts">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/notation-engine.js"></script>
+    <script src="js/playback-engine.js"></script>
+    <script src="js/audio-analysis-engine.js"></script>
+    <script src="js/harmony-engine.js"></script>
+</body>
+</html>

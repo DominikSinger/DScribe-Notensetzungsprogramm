@@ -299,7 +299,35 @@ FakesAssemblies/
 
 # Node.js Tools for Visual Studio
 .ntvs_analysis.dat
+# Dependencies
 node_modules/
+package-lock.json
+
+# Build output
+dist/
+build/
+out/
+
+# User data (development)
+test-user-data/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temp files
+*.tmp
+.cache//
 
 # Visual Studio 6 build log
 *.plg
