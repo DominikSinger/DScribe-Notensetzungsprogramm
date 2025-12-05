@@ -723,6 +723,134 @@ body {
     border-top: 1px solid #ddd;
 }
 
+/* Transpose Dialog (Phase 6) */
+.transpose-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.transpose-option {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.transpose-option label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.transpose-option select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Chord Dialog (Phase 6) */
+.chord-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.chord-option {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chord-option label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.chord-option select,
+.chord-option input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.chord-preview {
+    padding: 15px;
+    background: #f5f5f5;
+    border: 2px solid #2196f3;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Guitar TAB Dialog (Phase 6) */
+.guitar-tab-dialog {
+    min-width: 600px;
+    max-width: 800px;
+}
+
+.tab-options {
+    margin-bottom: 20px;
+}
+
+.tab-options label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 10px;
+}
+
+.tab-options select {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.tab-display {
+    background: #1a1a1a;
+    color: #0f0;
+    padding: 20px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    overflow-x: auto;
+    min-height: 200px;
+}
+
+.tab-strings {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tab-string {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tab-string-label {
+    min-width: 30px;
+    color: #0f0;
+    font-weight: bold;
+}
+
+.tab-fret {
+    display: inline-block;
+    min-width: 20px;
+    text-align: center;
+    color: #0f0;
+    padding: 0 5px;
+}
+
 .modal-btn {
     padding: 8px 16px;
     border: 1px solid #ccc;

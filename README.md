@@ -115,11 +115,28 @@ DScribe ist ein modernes Desktop-Notensatzprogramm mit erweiterten Audio- und An
 - 📋 **Chord-Detection**: Geplant für erweiterte Harmonie-Analyse (Phase 6)
 - 📋 **Tempo-Detection**: BPM-Erkennung aus Audio (zukünftig)
 
-### 📋 Phase 6 - Harmonie & Akkorde
-- Transposition
-- Akkord-Generierung
-- Gitarren-TAB
-- Harmonie-Assistent
+### ✅ Phase 6 - Harmonie & Akkorde (100%)
+- ✅ **Transpositions-Algorithmus**: Semitone-basierte Transposition mit Enharmonik
+- ✅ **Transpositions-Dialog**: UI mit Intervall-Auswahl (Oktave, Quinte, Quarte, etc.)
+- ✅ **Prefer-Flats-Option**: ♯ vs. ♭ Notation wählbar
+- ✅ **Project-Transposition**: Komplettes Projekt transponieren
+- ✅ **Chord-Detection**: Pattern-Matching für 14 Akkordtypen
+- ✅ **Chord-Templates**: Major, Minor, Dim, Aug, Sus2, Sus4, Maj7, m7, 7, dim7, m7♭5, add9, m6, 6
+- ✅ **Chord-Generator**: Akkorde aus Grundton + Typ generieren
+- ✅ **Chord-Symbols**: Automatische Symbol-Generierung (Cmaj7, Dm, G7, etc.)
+- ✅ **Chord-Preview**: Live-Vorschau im Dialog
+- ✅ **Guitar-TAB-Generator**: Fretboard-Position-Finder für Standard-Tuning
+- ✅ **Multi-Tuning-Support**: Standard (EADGBE), Drop D, Half-Step Down
+- ✅ **String/Fret-Optimization**: Bevorzugt niedrigere Bünde für Spielbarkeit
+- ✅ **TAB-Visualization**: Terminal-Style TAB-Display mit 6 Saiten
+- ✅ **Melody-Harmonization**: Automatische Akkord-Generierung für Melodie
+- ✅ **Scale-Generation**: Major, Minor, Harmonic Minor, Melodic Minor, Modi (Dorian, Phrygian, Lydian, Mixolydian, Locrian)
+- ✅ **Voice-Leading-Check**: Parallel-5ths/Octaves Detection
+- ✅ **Large-Leap-Warning**: Sprung-Analyse für Voice-Movement
+- ✅ **Chord-Progression-Suggester**: Häufige Progressionen (I-IV-V-I, I-vi-IV-V)
+- ✅ **Enharmonic-Spelling**: Intelligente Note-Namen (C# vs Db) basierend auf Kontext
+- ✅ **MIDI-Note-Conversion**: VexFlow ↔ MIDI-Note-Number
+- ✅ **Interval-Calculation**: Semitone-Distanzen und musikalische Intervalle
 
 ### 📋 Phase 7 - Layout & UX
 - Abschnitts-Layouts

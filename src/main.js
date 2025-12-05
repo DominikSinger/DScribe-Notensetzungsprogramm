@@ -352,6 +352,17 @@ function buildApplicationMenu() {
         },
         { type: 'separator' },
         {
+          label: 'Harmonie',
+          submenu: [
+            { label: 'Transponieren...', accelerator: 'CmdOrCtrl+T', click: () => mainWindow.webContents.send('menu-action', 'insert-transpose') },
+            { label: 'Akkord generieren...', click: () => mainWindow.webContents.send('menu-action', 'insert-chord') },
+            { label: 'Melodie harmonisieren', click: () => mainWindow.webContents.send('menu-action', 'insert-harmonize') },
+            { type: 'separator' },
+            { label: 'Gitarren-Tabulatur...', click: () => mainWindow.webContents.send('menu-action', 'insert-guitar-tab') }
+          ]
+        },
+        { type: 'separator' },
+        {
           label: 'Wiederholungszeichen',
           submenu: [
             { label: 'Wiederholungsanfang', click: () => mainWindow.webContents.send('menu-action', 'insert-repeat-start') },

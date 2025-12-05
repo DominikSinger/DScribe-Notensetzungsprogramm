@@ -31,6 +31,9 @@ class DScribeApp {
         this.audioAnalysisEngine = new AudioAnalysisEngine();
         await this.audioAnalysisEngine.initialize();
         
+        // Initialize harmony engine (Phase 6)
+        this.harmonyEngine = new HarmonyEngine();
+        
         // Setup event listeners
         this.setupEventListeners();
         
@@ -217,6 +220,12 @@ class DScribeApp {
             'playback-tempo': () => this.showTempoDialog(),
             'playback-mixer': () => this.showMixer(),
             'playback-instrument': () => this.showInstrumentPicker(),
+            
+            // Harmony menu (Phase 6)
+            'insert-transpose': () => this.showTransposeDialog(),
+            'insert-chord': () => this.showChordDialog(),
+            'insert-guitar-tab': () => this.showGuitarTabDialog(),
+            'insert-harmonize': () => this.harmonizeMelody(),
             
             // Help menu
             'help-shortcuts': () => this.showShortcuts(),
@@ -1087,6 +1096,202 @@ class DScribeApp {
         document.getElementById('btn-add-detected-note').disabled = true;
         document.getElementById('detected-note').textContent = '-';
         document.getElementById('detected-frequency').textContent = '- Hz';
+    }
+    
+    // Harmony Functions (Phase 6)
+    showTransposeDialog() {
+        const modal = document.getElementById('transpose-modal');
+        modal.style.display = 'flex';
+        
+        document.getElementById('btn-apply-transpose').onclick = () => this.applyTranspose();
+        document.getElementById('btn-cancel-transpose').onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+    
+    applyTranspose() {
+        const semitones = parseInt(document.getElementById('transpose-interval').value);
+        const preferFlats = document.getElementById('prefer-flats').checked;
+        
+        if (semitones === 0) {
+            alert('Keine Transposition gewählt');
+            return;
+        }
+        
+        this.setStatus('Transponiere...');
+        
+        this.currentProject.measures = this.harmonyEngine.transposeProject(
+            this.currentProject.measures,
+            semitones,
+            preferFlats
+        );
+        
+        this.notationEngine.render(this.currentProject.measures);
+        this.markProjectDirty();
+        
+        document.getElementById('transpose-modal').style.display = 'none';
+        this.setStatus(`Transponiert um ${semitones} Halbtöne`);
+    }
+    
+    showChordDialog() {
+        const modal = document.getElementById('chord-modal');
+        modal.style.display = 'flex';
+        
+        const updatePreview = () => {
+            const root = document.getElementById('chord-root').value;
+            const type = document.getElementById('chord-type').value;
+            const octave = parseInt(document.getElementById('chord-octave').value);
+            
+            const chord = this.harmonyEngine.generateChord(root, type, octave);
+            const symbol = this.harmonyEngine.getChordSymbol(root, type);
+            
+            document.getElementById('chord-preview').textContent = 
+                `${symbol}: ${chord.join(', ')}`;
+        };
+        
+        document.getElementById('chord-root').onchange = updatePreview;
+        document.getElementById('chord-type').onchange = updatePreview;
+        document.getElementById('chord-octave').oninput = updatePreview;
+        
+        updatePreview();
+        
+        document.getElementById('btn-add-chord').onclick = () => {
+            const root = document.getElementById('chord-root').value;
+            const type = document.getElementById('chord-type').value;
+            const octave = parseInt(document.getElementById('chord-octave').value);
+            
+            const chord = this.harmonyEngine.generateChord(root, type, octave);
+            
+            // Add chord to current measure
+            const measureIndex = this.currentProject.measures.length - 1;
+            if (!this.currentProject.measures[measureIndex]) {
+                this.currentProject.measures[measureIndex] = { notes: [] };
+            }
+            
+            this.currentProject.measures[measureIndex].notes.push({
+                keys: chord,
+                duration: 'q'
+            });
+            
+            this.notationEngine.render(this.currentProject.measures);
+            this.markProjectDirty();
+            
+            modal.style.display = 'none';
+            this.setStatus(`Akkord ${this.harmonyEngine.getChordSymbol(root, type)} hinzugefügt`);
+        };
+        
+        document.getElementById('btn-cancel-chord').onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+    
+    showGuitarTabDialog() {
+        const modal = document.getElementById('guitar-tab-modal');
+        modal.style.display = 'flex';
+        
+        const generateTab = () => {
+            const tuning = document.getElementById('guitar-tuning').value;
+            const tabDisplay = document.getElementById('tab-display');
+            
+            // Collect all notes from current project
+            const allNotes = [];
+            this.currentProject.measures.forEach(measure => {
+                if (measure.notes) {
+                    measure.notes.forEach(note => {
+                        if (note.keys && note.keys.length > 0 && !note.duration.includes('r')) {
+                            note.keys.forEach(key => allNotes.push(key));
+                        }
+                    });
+                }
+            });
+            
+            if (allNotes.length === 0) {
+                tabDisplay.innerHTML = '<p>Keine Noten zum Konvertieren</p>';
+                return;
+            }
+            
+            const tab = this.harmonyEngine.generateGuitarTab(allNotes, tuning);
+            
+            // Render TAB
+            let tabHtml = '<div class="tab-strings">';
+            for (let string = 6; string >= 1; string--) {
+                tabHtml += `<div class="tab-string">`;
+                tabHtml += `<span class="tab-string-label">E${7-string}|</span>`;
+                
+                const stringNotes = tab.filter(t => t.string === string);
+                if (stringNotes.length > 0) {
+                    stringNotes.forEach(note => {
+                        tabHtml += `<span class="tab-fret">${note.fret}</span>`;
+                    });
+                } else {
+                    tabHtml += '<span class="tab-fret">-</span>';
+                }
+                
+                tabHtml += '</div>';
+            }
+            tabHtml += '</div>';
+            
+            tabDisplay.innerHTML = tabHtml;
+        };
+        
+        document.getElementById('guitar-tuning').onchange = generateTab;
+        generateTab();
+        
+        document.getElementById('btn-export-tab').onclick = () => {
+            alert('TAB-Export wird in einem späteren Update implementiert');
+        };
+        
+        document.getElementById('btn-close-tab').onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+    
+    harmonizeMelody() {
+        const key = this.currentProject.keySignature || 'C';
+        
+        // Collect melody notes from first voice
+        const melodyNotes = [];
+        this.currentProject.measures.forEach(measure => {
+            if (measure.notes && measure.notes.length > 0) {
+                measure.notes.forEach(note => {
+                    if (note.keys && note.keys.length > 0 && !note.duration.includes('r')) {
+                        melodyNotes.push(note.keys[0]);
+                    }
+                });
+            }
+        });
+        
+        if (melodyNotes.length === 0) {
+            alert('Keine Melodie zum Harmonisieren gefunden');
+            return;
+        }
+        
+        this.setStatus('Harmonisiere Melodie...');
+        
+        const harmonized = this.harmonyEngine.harmonizeMelody(melodyNotes, key);
+        
+        // Add harmonization to measures
+        let noteIndex = 0;
+        this.currentProject.measures.forEach(measure => {
+            if (measure.notes && measure.notes.length > 0) {
+                measure.notes.forEach(note => {
+                    if (note.keys && note.keys.length > 0 && !note.duration.includes('r')) {
+                        if (noteIndex < harmonized.length) {
+                            // Add chord notes below melody
+                            const harm = harmonized[noteIndex];
+                            note.keys = harm.chord.concat([note.keys[0]]);
+                            noteIndex++;
+                        }
+                    }
+                });
+            }
+        });
+        
+        this.notationEngine.render(this.currentProject.measures);
+        this.markProjectDirty();
+        
+        this.setStatus(`Melodie harmonisiert mit ${harmonized.length} Akkorden`);
+        alert(`Melodie wurde erfolgreich harmonisiert!\n${harmonized.length} Akkorde hinzugefügt.`);
     }
 }
 
