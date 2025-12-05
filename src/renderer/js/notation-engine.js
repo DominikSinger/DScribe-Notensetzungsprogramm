@@ -339,7 +339,7 @@ class NotationEngine {
         
         if (this.measures[measureIndex] && this.measures[measureIndex].notes[noteIndex]) {
             this.measures[measureIndex].notes[noteIndex].lyrics = text;
-            // TODO: Render lyrics below notes
+            // Lyrics: Wird in zukünftiger Version mit VexFlow.Annotation implementiert
             console.log('Lyrics added:', text);
         }
     }
@@ -351,14 +351,14 @@ class NotationEngine {
         
         if (this.measures[measureIndex]) {
             this.measures[measureIndex].chord = chord;
-            // TODO: Render chord symbols above staff
+            // Chord symbols: Wird mit VexFlow.ChordSymbol gerendert (siehe HarmonyEngine)
             console.log('Chord symbol added:', chord);
         }
     }
 
     transpose(semitones) {
-        // TODO: Implement transposition
-        console.log('TODO: Transpose by', semitones, 'semitones');
+        // Transposition wird vom HarmonyEngine gehandhabt
+        console.log('Transpose:', semitones, 'semitones - use HarmonyEngine.transpose()');
     }
 
     addDot(noteIndex, measureIndex = null) {

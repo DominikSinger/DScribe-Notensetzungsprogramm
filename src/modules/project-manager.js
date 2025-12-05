@@ -174,15 +174,15 @@ class ProjectManager {
     }
 
     async exportProject(projectData, format, outputPath) {
-        // TODO: Implement export for different formats
-        logger.info(`TODO: Export to ${format} at ${outputPath}`);
-        throw new Error(`Export format ${format} not yet implemented`);
+        // Export wird von ExportManager gehandhabt
+        logger.info(`Export to ${format} at ${outputPath} - use ExportManager instead`);
+        throw new Error(`Use ExportManager for ${format} export`);
     }
 
     async importProject(filePath, format) {
-        // TODO: Implement import from different formats
-        logger.info(`TODO: Import from ${format} at ${filePath}`);
-        throw new Error(`Import format ${format} not yet implemented`);
+        // Import wird von ImportManager gehandhabt
+        logger.info(`Import from ${format} at ${filePath} - use ImportManager instead`);
+        throw new Error(`Use ImportManager for ${format} import`);
     }
 }
 

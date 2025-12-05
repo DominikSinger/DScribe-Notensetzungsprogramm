@@ -22,6 +22,10 @@ class DScribeApp {
         // Keyboard shortcuts (Phase 7) - will be initialized in initializeShortcuts()
         this.shortcuts = {};
         
+        // Selection and clipboard
+        this.selectedNotes = [];
+        this.clipboard = [];
+        
         this.init();
     }
 
@@ -325,8 +329,8 @@ class DScribeApp {
                 this.showError(`Fehler bei Aktion "${action}": ${error.message}`);
             }
         } else {
-            console.log(`TODO: Implement menu action: ${action}`);
-            this.setStatus(`TODO: ${action} implementieren`);
+            console.warn(`Unhandled menu action: ${action}`);
+            this.setStatus(`Aktion nicht verfügbar: ${action}`);
         }
     }
 
@@ -778,11 +782,10 @@ class DScribeApp {
         }
     }
     
-    handleExportMP3() { 
-        this.showTodoDialog('MP3-Export (Recorder in Phase 5)'); 
-    }
-
-    // Edit operations (Phase 7 - Undo/Redo System)
+    async handleExportMP3() {
+        alert('MP3-Export\n\nMP3-Export erfordert Audio-Recording-Funktionalität.\nAktuell können Sie MIDI exportieren und mit einem externen Tool in MP3 konvertieren.\n\nEmpfohlene Tools:\n- Audacity (kostenlos)\n- FL Studio\n- Logic Pro');
+        this.setStatus('MP3-Export nicht verfügbar');
+    }    // Edit operations (Phase 7 - Undo/Redo System)
     saveState(actionDescription) {
         const state = {
             measures: JSON.parse(JSON.stringify(this.currentProject.measures)),
@@ -868,11 +871,78 @@ class DScribeApp {
         }
     }
 
-    handleCut() { this.showTodoDialog('Ausschneiden'); }
-    handleCopy() { this.showTodoDialog('Kopieren'); }
-    handlePaste() { this.showTodoDialog('Einfügen'); }
-    handleDelete() { this.showTodoDialog('Löschen'); }
-    handleSelectAll() { this.showTodoDialog('Alles auswählen'); }
+    handleCut() {
+        if (this.selectedNotes && this.selectedNotes.length > 0) {
+            this.clipboard = [...this.selectedNotes];
+            this.saveState('Ausschneiden');
+            this.selectedNotes.forEach(note => this.deleteNote(note));
+            this.selectedNotes = [];
+            this.setStatus('Noten ausgeschnitten');
+        } else {
+            this.setStatus('Keine Noten ausgewählt');
+        }
+    }
+    
+    handleCopy() {
+        if (this.selectedNotes && this.selectedNotes.length > 0) {
+            this.clipboard = [...this.selectedNotes];
+            this.setStatus(`${this.clipboard.length} Noten kopiert`);
+        } else {
+            this.setStatus('Keine Noten ausgewählt');
+        }
+    }
+    
+    handlePaste() {
+        if (this.clipboard && this.clipboard.length > 0) {
+            this.saveState('Einfügen');
+            this.clipboard.forEach(note => {
+                const measureIndex = this.currentProject.measures.length - 1;
+                if (!this.currentProject.measures[measureIndex]) {
+                    this.currentProject.measures[measureIndex] = { notes: [] };
+                }
+                this.currentProject.measures[measureIndex].notes.push({...note});
+            });
+            this.notationEngine.render(this.currentProject.measures);
+            this.markProjectDirty();
+            this.setStatus(`${this.clipboard.length} Noten eingefügt`);
+        } else {
+            this.setStatus('Zwischenablage ist leer');
+        }
+    }
+    
+    handleDelete() {
+        if (this.selectedNotes && this.selectedNotes.length > 0) {
+            this.saveState('Löschen');
+            this.selectedNotes.forEach(note => this.deleteNote(note));
+            this.selectedNotes = [];
+            this.notationEngine.render(this.currentProject.measures);
+            this.markProjectDirty();
+            this.setStatus('Noten gelöscht');
+        } else {
+            this.setStatus('Keine Noten ausgewählt');
+        }
+    }
+    
+    handleSelectAll() {
+        this.selectedNotes = [];
+        this.currentProject.measures.forEach(measure => {
+            if (measure.notes) {
+                this.selectedNotes.push(...measure.notes);
+            }
+        });
+        this.setStatus(`${this.selectedNotes.length} Noten ausgewählt`);
+    }
+    
+    deleteNote(note) {
+        this.currentProject.measures.forEach(measure => {
+            if (measure.notes) {
+                const index = measure.notes.indexOf(note);
+                if (index > -1) {
+                    measure.notes.splice(index, 1);
+                }
+            }
+        });
+    }
 
     // View operations (enhanced in Phase 7)
     handleZoomIn() {
@@ -1001,11 +1071,6 @@ class DScribeApp {
     }
 
     // Dialogs
-    showTodoDialog(feature) {
-        alert(`TODO: ${feature} wird noch implementiert`);
-        this.setStatus(`TODO: ${feature}`);
-    }
-    
     showModalDialog(htmlContent) {
         // Create modal overlay
         const overlay = document.createElement('div');
@@ -1038,11 +1103,29 @@ class DScribeApp {
     }
 
     showProjectProperties() {
-        this.showTodoDialog('Projekt-Eigenschaften');
+        const props = `Projekt-Eigenschaften\n\n` +
+                     `Titel: ${this.currentProject.title}\n` +
+                     `Komponist: ${this.currentProject.composer}\n` +
+                     `Tonart: ${this.currentProject.keySignature}\n` +
+                     `Taktart: ${this.currentProject.timeSignature}\n` +
+                     `Tempo: ${this.currentProject.tempo} BPM\n` +
+                     `Schlüssel: ${this.currentProject.clef}\n` +
+                     `Takte: ${this.currentProject.measures.length}\n` +
+                     `Datei: ${this.currentProject.filePath || 'Nicht gespeichert'}`;
+        alert(props);
     }
 
-    showPreferences() {
-        this.showTodoDialog('Einstellungen');
+    async showPreferences() {
+        const settings = await window.electron.settings.getAll();
+        const prefs = `Einstellungen\n\n` +
+                     `Dark Mode: ${this.darkMode ? 'Aktiviert' : 'Deaktiviert'}\n` +
+                     `Zoom: ${this.zoom}%\n` +
+                     `Autosave: Aktiviert\n` +
+                     `Offene Tabs: ${this.openTabs.length}\n\n` +
+                     `Verwenden Sie die Menüs und Tastaturkürzel,\n` +
+                     `um Einstellungen anzupassen.\n\n` +
+                     `Strg+Shift+D - Dark Mode umschalten`;
+        alert(prefs);
     }
 
     showTempoDialog() {
