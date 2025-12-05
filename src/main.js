@@ -9,6 +9,8 @@ const logger = require('./modules/logger');
 const settingsManager = require('./modules/settings-manager');
 const updater = require('./modules/updater');
 const projectManager = require('./modules/project-manager');
+const ExportManager = require('./modules/export-manager');
+const ImportManager = require('./modules/import-manager');
 
 // Global reference to main window
 let mainWindow = null;
@@ -637,6 +639,36 @@ function setupIpcHandlers() {
   ipcMain.handle('app:getVersion', () => {
     return app.getVersion();
   });
+  
+  // Export handlers (Phase 4)
+  ipcMain.handle('export:pdf', async (event, projectData, outputPath, canvasDataUrl) => {
+    return await global.exportManager.exportToPDF(projectData, outputPath, { toDataURL: () => canvasDataUrl });
+  });
+  
+  ipcMain.handle('export:png', async (event, canvasDataUrl, outputPath) => {
+    // Convert data URL to buffer and save
+    const base64Data = canvasDataUrl.replace(/^data:image\/png;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    await fs.writeFile(outputPath, buffer);
+    return { success: true, path: outputPath };
+  });
+  
+  ipcMain.handle('export:midi', async (event, projectData, outputPath) => {
+    return await global.exportManager.exportToMIDI(projectData, outputPath);
+  });
+  
+  ipcMain.handle('export:musicxml', async (event, projectData, outputPath) => {
+    return await global.exportManager.exportToMusicXML(projectData, outputPath);
+  });
+  
+  // Import handlers (Phase 4)
+  ipcMain.handle('import:midi', async (event, filePath) => {
+    return await global.importManager.importFromMIDI(filePath);
+  });
+  
+  ipcMain.handle('import:musicxml', async (event, filePath) => {
+    return await global.importManager.importFromMusicXML(filePath);
+  });
 }
 
 // App lifecycle
@@ -656,6 +688,10 @@ app.whenReady().then(async () => {
   
   // Initialize updater
   updater.initialize(PATHS.updates);
+  
+  // Initialize export/import managers (Phase 4)
+  global.exportManager = new ExportManager(logger);
+  global.importManager = new ImportManager(logger);
   
   // Setup IPC handlers
   setupIpcHandlers();

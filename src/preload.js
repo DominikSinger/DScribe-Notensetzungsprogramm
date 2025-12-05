@@ -40,6 +40,24 @@ contextBridge.exposeInMainWorld('electron', {
     getVersion: () => ipcRenderer.invoke('app:getVersion')
   },
 
+  // Export API (Phase 4)
+  export: {
+    toPDF: (projectData, outputPath, canvasDataUrl) => 
+      ipcRenderer.invoke('export:pdf', projectData, outputPath, canvasDataUrl),
+    toPNG: (canvasDataUrl, outputPath) => 
+      ipcRenderer.invoke('export:png', canvasDataUrl, outputPath),
+    toMIDI: (projectData, outputPath) => 
+      ipcRenderer.invoke('export:midi', projectData, outputPath),
+    toMusicXML: (projectData, outputPath) => 
+      ipcRenderer.invoke('export:musicxml', projectData, outputPath)
+  },
+
+  // Import API (Phase 4)
+  import: {
+    fromMIDI: (filePath) => ipcRenderer.invoke('import:midi', filePath),
+    fromMusicXML: (filePath) => ipcRenderer.invoke('import:musicxml', filePath)
+  },
+
   // Menu actions listener
   onMenuAction: (callback) => {
     ipcRenderer.on('menu-action', (event, action, ...args) => callback(action, ...args));

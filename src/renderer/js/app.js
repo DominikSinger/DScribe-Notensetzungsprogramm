@@ -410,16 +410,211 @@ class DScribeApp {
         }
     }
 
-    // Placeholders for import/export
-    handleImportPDF() { this.showTodoDialog('PDF-Import'); }
-    handleImportMIDI() { this.showTodoDialog('MIDI-Import'); }
-    handleImportMusicXML() { this.showTodoDialog('MusicXML-Import'); }
-    handleImportAudio() { this.showTodoDialog('Audio-Import'); }
-    handleExportPDF() { this.showTodoDialog('PDF-Export'); }
-    handleExportMIDI() { this.showTodoDialog('MIDI-Export'); }
-    handleExportMP3() { this.showTodoDialog('MP3-Export'); }
-    handleExportMusicXML() { this.showTodoDialog('MusicXML-Export'); }
-    handleExportPNG() { this.showTodoDialog('PNG-Export'); }
+    // Import handlers (Phase 4)
+    handleImportPDF() { this.showTodoDialog('PDF-Import (OMR in Phase 8)'); }
+    handleImportAudio() { this.showTodoDialog('Audio-Import (Phase 5)'); }
+    
+    async handleImportMIDI() {
+        try {
+            const result = await window.electron.dialog.openFile({
+                title: 'MIDI-Datei importieren',
+                filters: [
+                    { name: 'MIDI Files', extensions: ['mid', 'midi'] }
+                ],
+                properties: ['openFile']
+            });
+            
+            if (!result.canceled && result.filePaths.length > 0) {
+                this.setStatus('Importiere MIDI...');
+                const importResult = await window.electron.import.fromMIDI(result.filePaths[0]);
+                
+                if (importResult.success) {
+                    this.currentProject = importResult.project;
+                    this.updateProjectInfo();
+                    this.notationEngine.setKeySignature(this.currentProject.keySignature);
+                    this.notationEngine.setTimeSignature(this.currentProject.timeSignature);
+                    this.notationEngine.render(this.currentProject.measures);
+                    this.setStatus(`MIDI importiert: ${this.currentProject.measures.length} Takte`);
+                } else {
+                    alert('MIDI-Import fehlgeschlagen: ' + importResult.error);
+                    this.setStatus('MIDI-Import fehlgeschlagen');
+                }
+            }
+        } catch (error) {
+            console.error('MIDI import error:', error);
+            alert('Fehler beim MIDI-Import: ' + error.message);
+        }
+    }
+    
+    async handleImportMusicXML() {
+        try {
+            const result = await window.electron.dialog.openFile({
+                title: 'MusicXML-Datei importieren',
+                filters: [
+                    { name: 'MusicXML Files', extensions: ['xml', 'musicxml', 'mxl'] }
+                ],
+                properties: ['openFile']
+            });
+            
+            if (!result.canceled && result.filePaths.length > 0) {
+                this.setStatus('Importiere MusicXML...');
+                const importResult = await window.electron.import.fromMusicXML(result.filePaths[0]);
+                
+                if (importResult.success) {
+                    this.currentProject = importResult.project;
+                    this.updateProjectInfo();
+                    this.notationEngine.setKeySignature(this.currentProject.keySignature);
+                    this.notationEngine.setTimeSignature(this.currentProject.timeSignature);
+                    this.notationEngine.render(this.currentProject.measures);
+                    this.setStatus(`MusicXML importiert: ${this.currentProject.measures.length} Takte`);
+                } else {
+                    alert('MusicXML-Import fehlgeschlagen: ' + importResult.error);
+                    this.setStatus('MusicXML-Import fehlgeschlagen');
+                }
+            }
+        } catch (error) {
+            console.error('MusicXML import error:', error);
+            alert('Fehler beim MusicXML-Import: ' + error.message);
+        }
+    }
+    
+    // Export handlers (Phase 4)
+    async handleExportPDF() {
+        try {
+            const result = await window.electron.dialog.saveFile({
+                title: 'Als PDF exportieren',
+                defaultPath: `${this.currentProject.title || 'Unbenannt'}.pdf`,
+                filters: [
+                    { name: 'PDF Files', extensions: ['pdf'] }
+                ]
+            });
+            
+            if (!result.canceled && result.filePath) {
+                this.setStatus('Exportiere PDF...');
+                
+                // Get canvas as data URL
+                const canvas = document.querySelector('#score-canvas canvas');
+                if (!canvas) {
+                    alert('Kein Notenblatt zum Exportieren vorhanden');
+                    return;
+                }
+                
+                const canvasDataUrl = canvas.toDataURL('image/png');
+                const exportResult = await window.electron.export.toPDF(
+                    this.currentProject, 
+                    result.filePath,
+                    canvasDataUrl
+                );
+                
+                if (exportResult.success) {
+                    this.setStatus('PDF erfolgreich exportiert');
+                    alert('PDF wurde erfolgreich exportiert!');
+                } else {
+                    alert('PDF-Export fehlgeschlagen: ' + exportResult.error);
+                    this.setStatus('PDF-Export fehlgeschlagen');
+                }
+            }
+        } catch (error) {
+            console.error('PDF export error:', error);
+            alert('Fehler beim PDF-Export: ' + error.message);
+        }
+    }
+    
+    async handleExportPNG() {
+        try {
+            const result = await window.electron.dialog.saveFile({
+                title: 'Als PNG exportieren',
+                defaultPath: `${this.currentProject.title || 'Unbenannt'}.png`,
+                filters: [
+                    { name: 'PNG Files', extensions: ['png'] }
+                ]
+            });
+            
+            if (!result.canceled && result.filePath) {
+                this.setStatus('Exportiere PNG...');
+                
+                const canvas = document.querySelector('#score-canvas canvas');
+                if (!canvas) {
+                    alert('Kein Notenblatt zum Exportieren vorhanden');
+                    return;
+                }
+                
+                const canvasDataUrl = canvas.toDataURL('image/png');
+                const exportResult = await window.electron.export.toPNG(canvasDataUrl, result.filePath);
+                
+                if (exportResult.success) {
+                    this.setStatus('PNG erfolgreich exportiert');
+                    alert('PNG wurde erfolgreich exportiert!');
+                } else {
+                    alert('PNG-Export fehlgeschlagen: ' + exportResult.error);
+                    this.setStatus('PNG-Export fehlgeschlagen');
+                }
+            }
+        } catch (error) {
+            console.error('PNG export error:', error);
+            alert('Fehler beim PNG-Export: ' + error.message);
+        }
+    }
+    
+    async handleExportMIDI() {
+        try {
+            const result = await window.electron.dialog.saveFile({
+                title: 'Als MIDI exportieren',
+                defaultPath: `${this.currentProject.title || 'Unbenannt'}.mid`,
+                filters: [
+                    { name: 'MIDI Files', extensions: ['mid', 'midi'] }
+                ]
+            });
+            
+            if (!result.canceled && result.filePath) {
+                this.setStatus('Exportiere MIDI...');
+                const exportResult = await window.electron.export.toMIDI(this.currentProject, result.filePath);
+                
+                if (exportResult.success) {
+                    this.setStatus('MIDI erfolgreich exportiert');
+                    alert('MIDI wurde erfolgreich exportiert!');
+                } else {
+                    alert('MIDI-Export fehlgeschlagen: ' + exportResult.error);
+                    this.setStatus('MIDI-Export fehlgeschlagen');
+                }
+            }
+        } catch (error) {
+            console.error('MIDI export error:', error);
+            alert('Fehler beim MIDI-Export: ' + error.message);
+        }
+    }
+    
+    async handleExportMusicXML() {
+        try {
+            const result = await window.electron.dialog.saveFile({
+                title: 'Als MusicXML exportieren',
+                defaultPath: `${this.currentProject.title || 'Unbenannt'}.xml`,
+                filters: [
+                    { name: 'MusicXML Files', extensions: ['xml', 'musicxml'] }
+                ]
+            });
+            
+            if (!result.canceled && result.filePath) {
+                this.setStatus('Exportiere MusicXML...');
+                const exportResult = await window.electron.export.toMusicXML(this.currentProject, result.filePath);
+                
+                if (exportResult.success) {
+                    this.setStatus('MusicXML erfolgreich exportiert');
+                    alert('MusicXML wurde erfolgreich exportiert!');
+                } else {
+                    alert('MusicXML-Export fehlgeschlagen: ' + exportResult.error);
+                    this.setStatus('MusicXML-Export fehlgeschlagen');
+                }
+            }
+        } catch (error) {
+            console.error('MusicXML export error:', error);
+            alert('Fehler beim MusicXML-Export: ' + error.message);
+        }
+    }
+    
+    handleExportMP3() { 
+        this.showTodoDialog('MP3-Export (Recorder in Phase 5)'); 
+    }
 
     // Edit operations
     handleUndo() {
