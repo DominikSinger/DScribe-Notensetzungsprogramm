@@ -8,8 +8,19 @@ class DScribeApp {
         this.isPlaying = false;
         this.notationEngine = null;
         this.playbackEngine = null;
+        
+        // Undo/Redo system (Phase 7)
         this.undoStack = [];
         this.redoStack = [];
+        this.maxUndoSteps = 50;
+        
+        // UI state (Phase 7)
+        this.darkMode = false;
+        this.openTabs = [];
+        this.activeTabIndex = 0;
+        
+        // Keyboard shortcuts (Phase 7) - will be initialized in initializeShortcuts()
+        this.shortcuts = {};
         
         this.init();
     }
@@ -34,6 +45,9 @@ class DScribeApp {
         // Initialize harmony engine (Phase 6)
         this.harmonyEngine = new HarmonyEngine();
         
+        // Initialize keyboard shortcuts (Phase 7)
+        this.initializeShortcuts();
+        
         // Setup event listeners
         this.setupEventListeners();
         
@@ -45,6 +59,9 @@ class DScribeApp {
         
         // Create new project
         this.createNewProject();
+        
+        // Initialize tab system (Phase 7)
+        this.initializeTabSystem();
         
         // Start autosave
         this.startAutosave();
@@ -133,6 +150,7 @@ class DScribeApp {
         
         document.getElementById('project-key').addEventListener('change', (e) => {
             if (this.currentProject) {
+                this.saveState('Tonart ändern');
                 this.currentProject.keySignature = e.target.value;
                 this.notationEngine.setKeySignature(e.target.value);
                 this.markProjectDirty();
@@ -141,6 +159,7 @@ class DScribeApp {
         
         document.getElementById('project-time').addEventListener('change', (e) => {
             if (this.currentProject) {
+                this.saveState('Taktart ändern');
                 this.currentProject.timeSignature = e.target.value;
                 this.notationEngine.setTimeSignature(e.target.value);
                 this.markProjectDirty();
@@ -149,6 +168,7 @@ class DScribeApp {
         
         document.getElementById('project-tempo').addEventListener('change', (e) => {
             if (this.currentProject) {
+                this.saveState('Tempo ändern');
                 this.currentProject.tempo = parseInt(e.target.value);
                 this.playbackEngine.setTempo(parseInt(e.target.value));
                 document.getElementById('tempo-input').value = e.target.value;
@@ -163,6 +183,62 @@ class DScribeApp {
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+        
+        // Context menu (Phase 7)
+        this.setupContextMenu();
+    }
+    
+    setupContextMenu() {
+        // Context menu for score canvas (Phase 7)
+        const scoreContainer = document.getElementById('score-container');
+        const contextMenu = document.getElementById('context-menu');
+        
+        // Show context menu on right-click
+        scoreContainer.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            
+            // Position context menu at mouse position
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+            contextMenu.style.display = 'block';
+        });
+        
+        // Hide context menu on click outside
+        document.addEventListener('click', (e) => {
+            if (!contextMenu.contains(e.target)) {
+                contextMenu.style.display = 'none';
+            }
+        });
+        
+        // Handle context menu item clicks
+        contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.dataset.action;
+                this.handleContextMenuAction(action);
+                contextMenu.style.display = 'none';
+            });
+        });
+    }
+    
+    handleContextMenuAction(action) {
+        // Handle context menu actions (Phase 7)
+        const actions = {
+            'add-note': () => this.addNote(),
+            'add-rest': () => this.addRest(),
+            'add-measure': () => this.addMeasure(),
+            'cut': () => this.handleCut(),
+            'copy': () => this.handleCopy(),
+            'paste': () => this.handlePaste(),
+            'delete': () => this.handleDelete(),
+            'transpose': () => this.showTransposeDialog(),
+            'add-chord': () => this.showChordDialog(),
+            'harmonize': () => this.harmonizeMelody(),
+        };
+        
+        const handler = actions[action];
+        if (handler) {
+            handler();
+        }
     }
 
     setupMenuHandler() {
@@ -204,6 +280,9 @@ class DScribeApp {
             'view-zoom-in': () => this.handleZoomIn(),
             'view-zoom-out': () => this.handleZoomOut(),
             'view-zoom-reset': () => this.handleZoomReset(),
+            'view-zoom-fit': () => this.zoomToFit(),
+            'view-zoom-width': () => this.zoomToWidth(),
+            'view-zoom-custom': () => this.showZoomDialog(),
             'view-single-page': (checked) => this.setPageView('single', checked),
             'view-two-page': (checked) => this.setPageView('two', checked),
             'view-palettes': (checked) => this.togglePalettes(checked),
@@ -270,45 +349,72 @@ class DScribeApp {
     }
 
     handleKeyPress(e) {
-        // Space for play/pause
-        if (e.code === 'Space' && !e.target.matches('input, textarea')) {
-            e.preventDefault();
-            this.handlePlay();
+        // Don't trigger shortcuts when typing in input fields
+        if (e.target.matches('input, textarea, select')) {
+            return;
         }
         
-        // Ctrl+Z for undo
-        if (e.ctrlKey && e.key === 'z') {
-            e.preventDefault();
-            this.handleUndo();
+        // Check if any shortcut matches
+        for (const [key, config] of Object.entries(this.shortcuts)) {
+            if (this.matchesShortcut(e, config)) {
+                e.preventDefault();
+                config.action();
+                return;
+            }
         }
-        
-        // Ctrl+Y for redo
-        if (e.ctrlKey && e.key === 'y') {
-            e.preventDefault();
-            this.handleRedo();
-        }
-        
-        // Ctrl+S for save
-        if (e.ctrlKey && e.key === 's') {
-            e.preventDefault();
-            this.handleFileSave();
-        }
-        
-        // Ctrl+N for new
-        if (e.ctrlKey && e.key === 'n') {
-            e.preventDefault();
-            this.handleFileNew();
-        }
-        
-        // Ctrl+O for open
-        if (e.ctrlKey && e.key === 'o') {
-            e.preventDefault();
-            this.handleFileOpen();
-        }
+    }
+    
+    matchesShortcut(event, config) {
+        return (
+            event.key.toLowerCase() === config.key.toLowerCase() &&
+            !!event.ctrlKey === !!config.ctrl &&
+            !!event.shiftKey === !!config.shift &&
+            !!event.altKey === !!config.alt
+        );
+    }
+    
+    initializeShortcuts() {
+        // Define all keyboard shortcuts (Phase 7)
+        this.shortcuts = {
+            // File operations
+            'new': { key: 'n', ctrl: true, action: () => this.handleFileNew(), description: 'Neue Partitur' },
+            'open': { key: 'o', ctrl: true, action: () => this.handleFileOpen(), description: 'Öffnen' },
+            'save': { key: 's', ctrl: true, action: () => this.handleFileSave(), description: 'Speichern' },
+            'save-as': { key: 's', ctrl: true, shift: true, action: () => this.handleFileSaveAs(), description: 'Speichern unter' },
+            
+            // Edit operations
+            'undo': { key: 'z', ctrl: true, action: () => this.handleUndo(), description: 'Rückgängig' },
+            'redo': { key: 'y', ctrl: true, action: () => this.handleRedo(), description: 'Wiederherstellen' },
+            'redo-alt': { key: 'z', ctrl: true, shift: true, action: () => this.handleRedo(), description: 'Wiederherstellen (Alt)' },
+            'cut': { key: 'x', ctrl: true, action: () => this.handleCut(), description: 'Ausschneiden' },
+            'copy': { key: 'c', ctrl: true, action: () => this.handleCopy(), description: 'Kopieren' },
+            'paste': { key: 'v', ctrl: true, action: () => this.handlePaste(), description: 'Einfügen' },
+            'select-all': { key: 'a', ctrl: true, action: () => this.handleSelectAll(), description: 'Alles auswählen' },
+            'delete': { key: 'Delete', action: () => this.handleDelete(), description: 'Löschen' },
+            
+            // View operations
+            'zoom-in': { key: '+', ctrl: true, action: () => this.handleZoomIn(), description: 'Vergrößern' },
+            'zoom-out': { key: '-', ctrl: true, action: () => this.handleZoomOut(), description: 'Verkleinern' },
+            'zoom-reset': { key: '0', ctrl: true, action: () => this.handleZoomReset(), description: 'Zoom zurücksetzen' },
+            
+            // Playback operations
+            'play': { key: ' ', action: () => this.handlePlay(), description: 'Abspielen/Pause' },
+            'stop': { key: 'Escape', action: () => this.handleStop(), description: 'Stopp' },
+            'rewind': { key: 'Home', action: () => this.handleRewind(), description: 'Zurückspulen' },
+            
+            // Note input
+            'add-note': { key: 'n', action: () => this.addNote(), description: 'Note hinzufügen' },
+            'add-rest': { key: 'r', action: () => this.addRest(), description: 'Pause hinzufügen' },
+            'add-measure': { key: 'm', action: () => this.addMeasure(), description: 'Takt hinzufügen' },
+            
+            // Other
+            'dark-mode': { key: 'd', ctrl: true, shift: true, action: () => this.toggleDarkMode(), description: 'Dark Mode umschalten' },
+            'shortcuts': { key: 'F1', action: () => this.showShortcuts(), description: 'Tastaturkürzel anzeigen' },
+        };
     }
 
     createNewProject() {
-        this.currentProject = {
+        const project = {
             title: 'Unbenannt',
             composer: '',
             keySignature: 'C',
@@ -320,9 +426,17 @@ class DScribeApp {
             filePath: null
         };
         
-        this.updateProjectUI();
-        this.notationEngine.clear();
-        this.notationEngine.loadProjectData(this.currentProject);
+        // Add to tabs if multi-tab is active (Phase 7)
+        if (this.openTabs.length > 0) {
+            this.addTab(project);
+        } else {
+            this.currentProject = project;
+            this.updateProjectUI();
+            this.notationEngine.clear();
+            this.notationEngine.loadProjectData(this.currentProject);
+        }
+        
+        return project;
         this.setStatus('Neues Projekt erstellt');
     }
 
@@ -633,22 +747,89 @@ class DScribeApp {
         this.showTodoDialog('MP3-Export (Recorder in Phase 5)'); 
     }
 
-    // Edit operations
-    handleUndo() {
-        if (this.undoStack.length > 0) {
-            const action = this.undoStack.pop();
-            this.redoStack.push(action);
-            // TODO: Apply undo
-            this.setStatus('Rückgängig');
+    // Edit operations (Phase 7 - Undo/Redo System)
+    saveState(actionDescription) {
+        const state = {
+            measures: JSON.parse(JSON.stringify(this.currentProject.measures)),
+            description: actionDescription,
+            timestamp: Date.now()
+        };
+        
+        this.undoStack.push(state);
+        
+        // Limit undo stack size
+        if (this.undoStack.length > this.maxUndoSteps) {
+            this.undoStack.shift();
         }
+        
+        // Clear redo stack when new action is performed
+        this.redoStack = [];
+        
+        this.updateUndoRedoButtons();
+    }
+    
+    handleUndo() {
+        if (this.undoStack.length === 0) {
+            this.setStatus('Nichts zum Rückgängigmachen');
+            return;
+        }
+        
+        // Save current state to redo
+        const currentState = {
+            measures: JSON.parse(JSON.stringify(this.currentProject.measures)),
+            description: 'Redo',
+            timestamp: Date.now()
+        };
+        this.redoStack.push(currentState);
+        
+        // Restore previous state
+        const previousState = this.undoStack.pop();
+        this.currentProject.measures = previousState.measures;
+        this.notationEngine.render(this.currentProject.measures);
+        
+        this.updateUndoRedoButtons();
+        this.setStatus(`Rückgängig: ${previousState.description}`);
     }
 
     handleRedo() {
-        if (this.redoStack.length > 0) {
-            const action = this.redoStack.pop();
-            this.undoStack.push(action);
-            // TODO: Apply redo
-            this.setStatus('Wiederherstellen');
+        if (this.redoStack.length === 0) {
+            this.setStatus('Nichts zum Wiederherstellen');
+            return;
+        }
+        
+        // Save current state to undo
+        const currentState = {
+            measures: JSON.parse(JSON.stringify(this.currentProject.measures)),
+            description: 'Undo',
+            timestamp: Date.now()
+        };
+        this.undoStack.push(currentState);
+        
+        // Restore redo state
+        const redoState = this.redoStack.pop();
+        this.currentProject.measures = redoState.measures;
+        this.notationEngine.render(this.currentProject.measures);
+        
+        this.updateUndoRedoButtons();
+        this.setStatus('Wiederhergestellt');
+    }
+    
+    updateUndoRedoButtons() {
+        const undoBtn = document.getElementById('btn-undo');
+        const redoBtn = document.getElementById('btn-redo');
+        
+        if (undoBtn) {
+            undoBtn.disabled = this.undoStack.length === 0;
+            undoBtn.title = this.undoStack.length > 0 
+                ? `Rückgängig: ${this.undoStack[this.undoStack.length - 1].description}` 
+                : 'Nichts zum Rückgängigmachen';
+        }
+        
+        if (redoBtn) {
+            redoBtn.disabled = this.redoStack.length === 0;
+            redoBtn.title = this.redoStack.length > 0 
+                ? 'Wiederherstellen' 
+                : 'Nichts zum Wiederherstellen';
         }
     }
 
@@ -658,14 +839,14 @@ class DScribeApp {
     handleDelete() { this.showTodoDialog('Löschen'); }
     handleSelectAll() { this.showTodoDialog('Alles auswählen'); }
 
-    // View operations
+    // View operations (enhanced in Phase 7)
     handleZoomIn() {
-        this.zoom = Math.min(200, this.zoom + 10);
+        this.zoom = Math.min(300, this.zoom + 10);
         this.applyZoom();
     }
 
     handleZoomOut() {
-        this.zoom = Math.max(50, this.zoom - 10);
+        this.zoom = Math.max(25, this.zoom - 10);
         this.applyZoom();
     }
 
@@ -673,12 +854,59 @@ class DScribeApp {
         this.zoom = 100;
         this.applyZoom();
     }
+    
+    setZoom(value) {
+        this.zoom = Math.max(25, Math.min(300, value));
+        this.applyZoom();
+    }
+    
+    zoomToFit() {
+        const container = document.getElementById('score-container');
+        const canvas = document.getElementById('score-canvas');
+        
+        const containerWidth = container.clientWidth;
+        const canvasWidth = canvas.scrollWidth;
+        
+        if (canvasWidth > 0) {
+            const fitZoom = Math.floor((containerWidth / canvasWidth) * 100);
+            this.setZoom(Math.max(25, Math.min(300, fitZoom)));
+        }
+    }
+    
+    zoomToWidth() {
+        // Fit to width (similar to zoomToFit but focused on width)
+        this.zoomToFit();
+        this.setStatus('Zoom: An Breite angepasst');
+    }
 
     applyZoom() {
         const canvas = document.getElementById('score-canvas');
         canvas.style.transform = `scale(${this.zoom / 100})`;
         canvas.style.transformOrigin = 'top center';
-        document.getElementById('zoom-level').textContent = `${this.zoom}%`;
+        
+        // Update zoom display
+        const zoomDisplay = document.getElementById('zoom-level');
+        zoomDisplay.textContent = `${this.zoom}%`;
+        zoomDisplay.style.cursor = 'pointer';
+        
+        // Make zoom display clickable for custom zoom
+        zoomDisplay.onclick = () => this.showZoomDialog();
+        
+        this.setStatus(`Zoom: ${this.zoom}%`);
+    }
+    
+    showZoomDialog() {
+        const currentZoom = this.zoom;
+        const newZoom = prompt(`Zoom-Stufe eingeben (25-300%):`, currentZoom);
+        
+        if (newZoom !== null) {
+            const zoomValue = parseInt(newZoom);
+            if (!isNaN(zoomValue) && zoomValue >= 25 && zoomValue <= 300) {
+                this.setZoom(zoomValue);
+            } else {
+                alert('Bitte einen Wert zwischen 25 und 300 eingeben.');
+            }
+        }
     }
 
     setPageView(mode, checked) {
@@ -913,14 +1141,142 @@ class DScribeApp {
     }
 
     showShortcuts() {
-        alert('Tastenkombinationen:\n\n' +
-              'Strg+N - Neu\n' +
-              'Strg+O - Öffnen\n' +
-              'Strg+S - Speichern\n' +
-              'Strg+Z - Rückgängig\n' +
-              'Strg+Y - Wiederherstellen\n' +
-              'Leertaste - Abspielen/Pause\n' +
-              'F11 - Vollbild');
+        // Display keyboard shortcuts dialog (Phase 7)
+        const modal = document.getElementById('shortcuts-modal');
+        modal.style.display = 'flex';
+        
+        document.getElementById('btn-close-shortcuts').onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+    
+    toggleDarkMode() {
+        // Toggle dark mode (Phase 7)
+        this.darkMode = !this.darkMode;
+        
+        if (this.darkMode) {
+            document.body.classList.add('dark-mode');
+            this.setStatus('Dark Mode aktiviert');
+        } else {
+            document.body.classList.remove('dark-mode');
+            this.setStatus('Dark Mode deaktiviert');
+        }
+        
+        // Save dark mode preference
+        localStorage.setItem('darkMode', this.darkMode);
+    }
+    
+    // Multi-Tab Management (Phase 7)
+    addTab(project) {
+        const tab = {
+            project: project,
+            undoStack: [],
+            redoStack: []
+        };
+        
+        this.openTabs.push(tab);
+        this.activeTabIndex = this.openTabs.length - 1;
+        
+        this.updateTabBar();
+        this.switchTab(this.activeTabIndex);
+    }
+    
+    switchTab(index) {
+        if (index < 0 || index >= this.openTabs.length) {
+            return;
+        }
+        
+        // Save current project state
+        if (this.activeTabIndex >= 0 && this.activeTabIndex < this.openTabs.length) {
+            this.openTabs[this.activeTabIndex].project = this.currentProject;
+            this.openTabs[this.activeTabIndex].undoStack = this.undoStack;
+            this.openTabs[this.activeTabIndex].redoStack = this.redoStack;
+        }
+        
+        // Load new tab
+        this.activeTabIndex = index;
+        const tab = this.openTabs[index];
+        this.currentProject = tab.project;
+        this.undoStack = tab.undoStack;
+        this.redoStack = tab.redoStack;
+        
+        // Update UI
+        this.updateProjectUI();
+        this.updateTabBar();
+        this.notationEngine.clear();
+        this.notationEngine.loadProjectData(this.currentProject);
+        this.notationEngine.render(this.currentProject.measures);
+        this.updateUndoRedoButtons();
+    }
+    
+    closeTab(index) {
+        if (this.openTabs.length <= 1) {
+            // Don't close the last tab
+            return;
+        }
+        
+        const tab = this.openTabs[index];
+        if (tab.project.isDirty) {
+            const confirmClose = confirm(`"${tab.project.title}" hat ungespeicherte Änderungen. Trotzdem schließen?`);
+            if (!confirmClose) {
+                return;
+            }
+        }
+        
+        this.openTabs.splice(index, 1);
+        
+        // Adjust active tab index
+        if (this.activeTabIndex >= this.openTabs.length) {
+            this.activeTabIndex = this.openTabs.length - 1;
+        }
+        
+        this.updateTabBar();
+        this.switchTab(this.activeTabIndex);
+    }
+    
+    updateTabBar() {
+        const tabList = document.getElementById('tab-list');
+        tabList.innerHTML = '';
+        
+        this.openTabs.forEach((tab, index) => {
+            const tabElement = document.createElement('div');
+            tabElement.className = 'tab' + (index === this.activeTabIndex ? ' active' : '');
+            tabElement.dataset.tabIndex = index;
+            
+            const title = document.createElement('span');
+            title.className = 'tab-title';
+            title.textContent = tab.project.title + (tab.project.isDirty ? ' *' : '');
+            
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'tab-close';
+            closeBtn.textContent = '×';
+            closeBtn.title = 'Schließen';
+            closeBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.closeTab(index);
+            };
+            
+            tabElement.appendChild(title);
+            tabElement.appendChild(closeBtn);
+            
+            tabElement.onclick = () => this.switchTab(index);
+            
+            tabList.appendChild(tabElement);
+        });
+    }
+    
+    initializeTabSystem() {
+        // Initialize multi-tab system (Phase 7)
+        const newTabBtn = document.getElementById('btn-new-tab');
+        newTabBtn.addEventListener('click', () => {
+            const project = this.createNewProject();
+            this.addTab(project);
+        });
+        
+        // Add initial project as first tab
+        if (this.currentProject) {
+            this.addTab(this.currentProject);
+        }
     }
 
     showAbout() {
@@ -936,18 +1292,42 @@ class DScribeApp {
         this.setStatus('Fehler: ' + message);
     }
 
-    // Score editing methods
-    addNote() {
+    // Score editing methods (with Undo support - Phase 7)
+    addNote(pitch = 'c/4', duration = 'q') {
         if (this.notationEngine) {
-            this.notationEngine.addNote('c/4');
+            this.saveState('Note hinzufügen');
+            
+            const measureIndex = this.currentProject.measures.length - 1;
+            if (!this.currentProject.measures[measureIndex]) {
+                this.currentProject.measures[measureIndex] = { notes: [] };
+            }
+            
+            this.currentProject.measures[measureIndex].notes.push({
+                keys: [pitch],
+                duration: duration
+            });
+            
+            this.notationEngine.render(this.currentProject.measures);
             this.markProjectDirty();
             this.setStatus('Note hinzugefügt');
         }
     }
 
-    addRest() {
+    addRest(duration = 'qr') {
         if (this.notationEngine) {
-            this.notationEngine.addRest();
+            this.saveState('Pause hinzufügen');
+            
+            const measureIndex = this.currentProject.measures.length - 1;
+            if (!this.currentProject.measures[measureIndex]) {
+                this.currentProject.measures[measureIndex] = { notes: [] };
+            }
+            
+            this.currentProject.measures[measureIndex].notes.push({
+                keys: [],
+                duration: duration
+            });
+            
+            this.notationEngine.render(this.currentProject.measures);
             this.markProjectDirty();
             this.setStatus('Pause hinzugefügt');
         }
@@ -955,7 +1335,10 @@ class DScribeApp {
 
     addMeasure() {
         if (this.notationEngine) {
-            this.notationEngine.addMeasure();
+            this.saveState('Takt hinzufügen');
+            
+            this.currentProject.measures.push({ notes: [] });
+            this.notationEngine.render(this.currentProject.measures);
             this.markProjectDirty();
             this.setStatus('Takt hinzugefügt');
         }
@@ -980,7 +1363,15 @@ class DScribeApp {
     async loadSettings() {
         const settings = await window.electron.settings.getAll();
         console.log('Loaded settings:', settings);
+        
         // Apply settings to UI
+        
+        // Load dark mode preference (Phase 7)
+        const darkModePreference = localStorage.getItem('darkMode');
+        if (darkModePreference === 'true') {
+            this.darkMode = true;
+            document.body.classList.add('dark-mode');
+        }
     }
 
     setStatus(text) {
@@ -1119,6 +1510,7 @@ class DScribeApp {
         }
         
         this.setStatus('Transponiere...');
+        this.saveState('Transponieren');
         
         this.currentProject.measures = this.harmonyEngine.transposeProject(
             this.currentProject.measures,
@@ -1161,6 +1553,8 @@ class DScribeApp {
             const octave = parseInt(document.getElementById('chord-octave').value);
             
             const chord = this.harmonyEngine.generateChord(root, type, octave);
+            
+            this.saveState('Akkord hinzufügen');
             
             // Add chord to current measure
             const measureIndex = this.currentProject.measures.length - 1;
@@ -1267,6 +1661,7 @@ class DScribeApp {
         }
         
         this.setStatus('Harmonisiere Melodie...');
+        this.saveState('Melodie harmonisieren');
         
         const harmonized = this.harmonyEngine.harmonizeMelody(melodyNotes, key);
         

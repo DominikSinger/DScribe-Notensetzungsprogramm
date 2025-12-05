@@ -48,6 +48,17 @@
                 </button>
             </div>
         </div>
+        
+        <!-- Tab Bar (Phase 7) -->
+        <div id="tab-bar">
+            <div id="tab-list">
+                <div class="tab active" data-tab-index="0">
+                    <span class="tab-title">Unbenannt</span>
+                    <span class="tab-close" title="Schließen">×</span>
+                </div>
+            </div>
+            <button id="btn-new-tab" class="new-tab-btn" title="Neuer Tab">+</button>
+        </div>
 
         <!-- Main Content Area -->
         <div id="main-content">
@@ -108,6 +119,49 @@
                     <button id="btn-add-note" class="score-control-btn">Note hinzufügen (C4)</button>
                     <button id="btn-add-rest" class="score-control-btn">Pause hinzufügen</button>
                     <button id="btn-add-measure" class="score-control-btn">Takt hinzufügen</button>
+                </div>
+            </div>
+            
+            <!-- Context Menu (Phase 7) -->
+            <div id="context-menu" class="context-menu" style="display: none;">
+                <div class="context-menu-item" data-action="add-note">
+                    <span>Note hinzufügen</span>
+                    <span class="shortcut-hint">N</span>
+                </div>
+                <div class="context-menu-item" data-action="add-rest">
+                    <span>Pause hinzufügen</span>
+                    <span class="shortcut-hint">R</span>
+                </div>
+                <div class="context-menu-item" data-action="add-measure">
+                    <span>Takt hinzufügen</span>
+                    <span class="shortcut-hint">M</span>
+                </div>
+                <div class="context-menu-separator"></div>
+                <div class="context-menu-item" data-action="cut">
+                    <span>Ausschneiden</span>
+                    <span class="shortcut-hint">Strg+X</span>
+                </div>
+                <div class="context-menu-item" data-action="copy">
+                    <span>Kopieren</span>
+                    <span class="shortcut-hint">Strg+C</span>
+                </div>
+                <div class="context-menu-item" data-action="paste">
+                    <span>Einfügen</span>
+                    <span class="shortcut-hint">Strg+V</span>
+                </div>
+                <div class="context-menu-item" data-action="delete">
+                    <span>Löschen</span>
+                    <span class="shortcut-hint">Entf</span>
+                </div>
+                <div class="context-menu-separator"></div>
+                <div class="context-menu-item" data-action="transpose">
+                    <span>Transponieren...</span>
+                </div>
+                <div class="context-menu-item" data-action="add-chord">
+                    <span>Akkord einfügen...</span>
+                </div>
+                <div class="context-menu-item" data-action="harmonize">
+                    <span>Harmonisieren</span>
                 </div>
             </div>
 
@@ -358,6 +412,75 @@
             <div class="dialog-buttons">
                 <button class="btn-primary" id="btn-export-tab">Exportieren</button>
                 <button class="btn-secondary" id="btn-close-tab">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Dialog (Phase 7) -->
+    <div id="shortcuts-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog shortcuts-dialog">
+            <h2>Tastaturkürzel</h2>
+            <div class="shortcuts-content">
+                <div class="shortcuts-section">
+                    <h3>Datei</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>Strg</kbd> + <kbd>N</kbd></td><td>Neue Partitur</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>O</kbd></td><td>Öffnen</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>S</kbd></td><td>Speichern</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></td><td>Speichern unter</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Bearbeiten</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>Strg</kbd> + <kbd>Z</kbd></td><td>Rückgängig</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>Y</kbd> / <kbd>Strg</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></td><td>Wiederherstellen</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>X</kbd></td><td>Ausschneiden</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>C</kbd></td><td>Kopieren</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>V</kbd></td><td>Einfügen</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>A</kbd></td><td>Alles auswählen</td></tr>
+                        <tr><td><kbd>Entf</kbd></td><td>Löschen</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Ansicht</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>Strg</kbd> + <kbd>+</kbd></td><td>Vergrößern</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>-</kbd></td><td>Verkleinern</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>0</kbd></td><td>Zoom zurücksetzen</td></tr>
+                        <tr><td><kbd>Strg</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd></td><td>Dark Mode umschalten</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Wiedergabe</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>Leertaste</kbd></td><td>Abspielen/Pause</td></tr>
+                        <tr><td><kbd>Esc</kbd></td><td>Stopp</td></tr>
+                        <tr><td><kbd>Pos1</kbd></td><td>Zurückspulen</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Noteneingabe</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>N</kbd></td><td>Note hinzufügen</td></tr>
+                        <tr><td><kbd>R</kbd></td><td>Pause hinzufügen</td></tr>
+                        <tr><td><kbd>M</kbd></td><td>Takt hinzufügen</td></tr>
+                    </table>
+                </div>
+                
+                <div class="shortcuts-section">
+                    <h3>Hilfe</h3>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>F1</kbd></td><td>Tastaturkürzel anzeigen</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="btn-primary" id="btn-close-shortcuts">Schließen</button>
             </div>
         </div>
     </div>

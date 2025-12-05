@@ -74,6 +74,142 @@ body {
     text-align: center;
 }
 
+/* Tab Bar (Phase 7) */
+#tab-bar {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(to bottom, #e8e8e8, #d8d8d8);
+    border-bottom: 1px solid #ccc;
+    padding: 4px 8px;
+    gap: 4px;
+    min-height: 36px;
+}
+
+#tab-list {
+    display: flex;
+    gap: 2px;
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+#tab-list::-webkit-scrollbar {
+    height: 6px;
+}
+
+#tab-list::-webkit-scrollbar-thumb {
+    background: #999;
+    border-radius: 3px;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #c0c0c0;
+    border: 1px solid #999;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.tab:hover {
+    background: #d0d0d0;
+}
+
+.tab.active {
+    background: white;
+    border-color: #888;
+    font-weight: 600;
+}
+
+.tab-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+}
+
+.tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    font-size: 18px;
+    line-height: 1;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.tab-close:hover {
+    background: rgba(255,0,0,0.1);
+    color: #d32f2f;
+}
+
+.new-tab-btn {
+    padding: 4px 12px;
+    border: 1px solid #aaa;
+    background: linear-gradient(to bottom, #fff, #e8e8e8);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    color: #555;
+    transition: all 0.2s;
+}
+
+.new-tab-btn:hover {
+    background: linear-gradient(to bottom, #f0f0f0, #d8d8d8);
+    color: #333;
+}
+
+body.dark-mode #tab-bar {
+    background: linear-gradient(to bottom, #2d2d2d, #252525);
+    border-bottom-color: #404040;
+}
+
+body.dark-mode .tab {
+    background: #1e1e1e;
+    border-color: #555;
+    color: #b0b0b0;
+}
+
+body.dark-mode .tab:hover {
+    background: #2a2a2a;
+}
+
+body.dark-mode .tab.active {
+    background: #2d2d2d;
+    border-color: #666;
+    color: #e0e0e0;
+}
+
+body.dark-mode .tab-close {
+    color: #888;
+}
+
+body.dark-mode .tab-close:hover {
+    background: rgba(255,0,0,0.2);
+    color: #ff5252;
+}
+
+body.dark-mode .new-tab-btn {
+    background: linear-gradient(to bottom, #3a3a3a, #2d2d2d);
+    border-color: #555;
+    color: #b0b0b0;
+}
+
+body.dark-mode .new-tab-btn:hover {
+    background: linear-gradient(to bottom, #454545, #383838);
+    color: #e0e0e0;
+}
+
 /* Main Content */
 #main-content {
     display: flex;
@@ -869,3 +1005,287 @@ body {
 .modal-btn-primary:hover {
     background: #1976d2;
 }
+
+/* Keyboard Shortcuts Dialog (Phase 7) */
+.shortcuts-dialog {
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.shortcuts-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.shortcuts-section {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.shortcuts-section h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #2196f3;
+    padding-bottom: 6px;
+}
+
+.shortcuts-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.shortcuts-table td {
+    padding: 8px 4px;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.shortcuts-table td:first-child {
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
+    width: 50%;
+    color: #555;
+}
+
+.shortcuts-table td:last-child {
+    color: #333;
+}
+
+.shortcuts-table tr:last-child td {
+    border-bottom: none;
+}
+
+kbd {
+    display: inline-block;
+    padding: 3px 8px;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    color: #333;
+    background: linear-gradient(to bottom, #fff, #e8e8e8);
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.7);
+    white-space: nowrap;
+}
+
+/* Dark Mode Styles (Phase 7) */
+body.dark-mode {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+
+body.dark-mode #toolbar {
+    background: linear-gradient(to bottom, #2d2d2d, #252525);
+    border-bottom-color: #404040;
+}
+
+body.dark-mode .toolbar-btn {
+    background: linear-gradient(to bottom, #3a3a3a, #2d2d2d);
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+body.dark-mode .toolbar-btn:hover {
+    background: linear-gradient(to bottom, #454545, #383838);
+}
+
+body.dark-mode .toolbar-separator {
+    background-color: #555;
+}
+
+body.dark-mode .palette-panel {
+    background-color: #252525;
+    border-color: #404040;
+}
+
+body.dark-mode .palette-section h3 {
+    color: #b0b0b0;
+    border-bottom-color: #404040;
+}
+
+body.dark-mode .palette-btn {
+    background: linear-gradient(to bottom, #3a3a3a, #2d2d2d);
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+body.dark-mode .palette-btn:hover {
+    background: linear-gradient(to bottom, #454545, #383838);
+}
+
+body.dark-mode .palette-btn.active {
+    background: linear-gradient(to bottom, #2196f3, #1976d2);
+    border-color: #1565c0;
+}
+
+body.dark-mode #score-container {
+    background-color: #2d2d2d;
+}
+
+body.dark-mode #properties-panel {
+    background-color: #252525;
+    border-color: #404040;
+}
+
+body.dark-mode .property-group label {
+    color: #b0b0b0;
+}
+
+body.dark-mode select,
+body.dark-mode input[type="text"],
+body.dark-mode input[type="number"] {
+    background-color: #3a3a3a;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+body.dark-mode select option {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+}
+
+body.dark-mode #transport-controls {
+    background: linear-gradient(to bottom, #2d2d2d, #252525);
+    border-top-color: #404040;
+}
+
+body.dark-mode .transport-btn {
+    background: linear-gradient(to bottom, #3a3a3a, #2d2d2d);
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+body.dark-mode .transport-btn:hover {
+    background: linear-gradient(to bottom, #454545, #383838);
+}
+
+body.dark-mode .transport-info {
+    color: #b0b0b0;
+}
+
+body.dark-mode #status-bar {
+    background: linear-gradient(to bottom, #2d2d2d, #252525);
+    border-top-color: #404040;
+    color: #b0b0b0;
+}
+
+body.dark-mode .modal-dialog {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border-color: #404040;
+}
+
+body.dark-mode .modal-dialog h2 {
+    color: #e0e0e0;
+    border-bottom-color: #404040;
+}
+
+body.dark-mode .shortcuts-section {
+    background-color: #252525;
+    border-color: #404040;
+}
+
+body.dark-mode .shortcuts-section h3 {
+    color: #e0e0e0;
+    border-bottom-color: #2196f3;
+}
+
+body.dark-mode .shortcuts-table td {
+    color: #b0b0b0;
+    border-bottom-color: #404040;
+}
+
+body.dark-mode kbd {
+    color: #e0e0e0;
+    background: linear-gradient(to bottom, #3a3a3a, #2d2d2d);
+    border-color: #555;
+}
+
+body.dark-mode .btn-primary {
+    background: #2196f3;
+    color: white;
+}
+
+body.dark-mode .btn-secondary {
+    background: #3a3a3a;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+body.dark-mode .btn-secondary:hover {
+    background: #454545;
+}
+
+/* Context Menu (Phase 7) */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 4px 0;
+    min-width: 200px;
+    z-index: 10000;
+}
+
+.context-menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+}
+
+.context-menu-item:hover {
+    background: #2196f3;
+    color: white;
+}
+
+.context-menu-item .shortcut-hint {
+    font-size: 11px;
+    color: #888;
+    margin-left: 20px;
+}
+
+.context-menu-item:hover .shortcut-hint {
+    color: rgba(255,255,255,0.8);
+}
+
+.context-menu-separator {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 4px 0;
+}
+
+body.dark-mode .context-menu {
+    background: #2d2d2d;
+    border-color: #555;
+}
+
+body.dark-mode .context-menu-item {
+    color: #e0e0e0;
+}
+
+body.dark-mode .context-menu-item:hover {
+    background: #2196f3;
+    color: white;
+}
+
+body.dark-mode .context-menu-separator {
+    background: #555;
+}
+
+body.dark-mode .context-menu-item .shortcut-hint {
+    color: #888;
+}
+
