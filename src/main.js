@@ -11,6 +11,9 @@ const updater = require('./modules/updater');
 const projectManager = require('./modules/project-manager');
 const ExportManager = require('./modules/export-manager');
 const ImportManager = require('./modules/import-manager');
+const pluginManager = require('./modules/plugin-manager'); // Phase 8
+const omrManager = require('./modules/omr-manager'); // Phase 8
+const soundfontManager = require('./modules/soundfont-manager'); // Phase 8
 
 // Global reference to main window
 let mainWindow = null;
@@ -26,6 +29,7 @@ const PATHS = {
   settings: path.join(USER_DATA_PATH, 'settings'),
   logs: path.join(USER_DATA_PATH, 'logs'),
   plugins: path.join(USER_DATA_PATH, 'plugins'),
+  soundfonts: path.join(USER_DATA_PATH, 'soundfonts'), // Phase 8
   cache: path.join(USER_DATA_PATH, 'cache'),
   analytics: path.join(USER_DATA_PATH, 'analytics'),
 };
@@ -549,6 +553,48 @@ function buildApplicationMenu() {
         }
       ]
     },
+    // Erweiterungen Menu (Phase 8)
+    {
+      label: 'Erweiterungen',
+      submenu: [
+        {
+          label: 'Plugin-Manager',
+          click: () => mainWindow.webContents.send('menu-action', 'plugins-manager')
+        },
+        {
+          label: 'Plugins neu laden',
+          click: async () => {
+            try {
+              await pluginManager.loadPlugins();
+              mainWindow.webContents.send('plugins-reloaded');
+            } catch (error) {
+              logger.error('Failed to reload plugins:', error);
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Soundfont-Manager',
+          click: () => mainWindow.webContents.send('menu-action', 'soundfonts-manager')
+        },
+        {
+          label: 'Soundfonts neu laden',
+          click: async () => {
+            try {
+              await soundfontManager.loadSoundfonts();
+              mainWindow.webContents.send('soundfonts-reloaded');
+            } catch (error) {
+              logger.error('Failed to reload soundfonts:', error);
+            }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'OMR-Einstellungen',
+          click: () => mainWindow.webContents.send('menu-action', 'omr-settings')
+        }
+      ]
+    },
     // Hilfe Menu
     {
       label: 'Hilfe',
@@ -680,6 +726,77 @@ function setupIpcHandlers() {
   ipcMain.handle('import:musicxml', async (event, filePath) => {
     return await global.importManager.importFromMusicXML(filePath);
   });
+  
+  // Plugin handlers (Phase 8)
+  ipcMain.handle('plugins:getAll', async () => {
+    return pluginManager.getAllPlugins();
+  });
+  
+  ipcMain.handle('plugins:load', async () => {
+    return await pluginManager.loadPlugins();
+  });
+  
+  ipcMain.handle('plugins:enable', async (event, pluginId) => {
+    return await pluginManager.enablePlugin(pluginId);
+  });
+  
+  ipcMain.handle('plugins:disable', async (event, pluginId) => {
+    return await pluginManager.disablePlugin(pluginId);
+  });
+  
+  ipcMain.handle('plugins:unload', async (event, pluginId) => {
+    return await pluginManager.unloadPlugin(pluginId);
+  });
+  
+  ipcMain.handle('plugins:install', async (event, packagePath) => {
+    return await pluginManager.installPlugin(packagePath);
+  });
+  
+  // OMR handlers (Phase 8)
+  ipcMain.handle('omr:recognize', async (event, filePath) => {
+    return await omrManager.recognizeFromFile(filePath);
+  });
+  
+  ipcMain.handle('omr:recognizePDF', async (event, pdfPath) => {
+    return await omrManager.recognizeFromPDF(pdfPath);
+  });
+  
+  ipcMain.handle('omr:getCapabilities', async () => {
+    return omrManager.getCapabilities();
+  });
+  
+  // Soundfont handlers (Phase 8)
+  ipcMain.handle('soundfonts:getAll', async () => {
+    return soundfontManager.getAllSoundfonts();
+  });
+  
+  ipcMain.handle('soundfonts:load', async () => {
+    return await soundfontManager.loadSoundfonts();
+  });
+  
+  ipcMain.handle('soundfonts:activate', async (event, soundfontId) => {
+    return await soundfontManager.activateSoundfont(soundfontId);
+  });
+  
+  ipcMain.handle('soundfonts:deactivate', async (event, soundfontId) => {
+    return await soundfontManager.deactivateSoundfont(soundfontId);
+  });
+  
+  ipcMain.handle('soundfonts:import', async (event, sourcePath) => {
+    return await soundfontManager.importSoundfont(sourcePath);
+  });
+  
+  ipcMain.handle('soundfonts:remove', async (event, soundfontId) => {
+    return await soundfontManager.removeSoundfont(soundfontId);
+  });
+  
+  ipcMain.handle('soundfonts:getInfo', async (event, soundfontId) => {
+    return await soundfontManager.getSoundfontInfo(soundfontId);
+  });
+  
+  ipcMain.handle('soundfonts:getRecommended', async () => {
+    return soundfontManager.getRecommendedSoundfonts();
+  });
 }
 
 // App lifecycle
@@ -690,6 +807,15 @@ app.whenReady().then(async () => {
   // Initialize logger with log directory
   logger.initialize(PATHS.logs);
   logger.info('Application starting...');
+  
+  // Initialize Phase 8 managers
+  pluginManager.initialize(PATHS.plugins);
+  await omrManager.initialize();
+  soundfontManager.initialize(PATHS.soundfonts);
+  
+  // Load plugins and soundfonts
+  await pluginManager.loadPlugins();
+  await soundfontManager.loadSoundfonts();
   
   // Initialize settings
   await settingsManager.initialize(PATHS.settings);

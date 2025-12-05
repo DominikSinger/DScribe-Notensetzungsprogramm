@@ -485,6 +485,59 @@
         </div>
     </div>
 
+    <!-- Plugin Manager Dialog (Phase 8) -->
+    <div id="plugin-manager-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog plugin-manager-dialog">
+            <h2>Plugin-Manager</h2>
+            <div class="plugin-manager-content">
+                <div class="plugin-toolbar">
+                    <button class="btn-secondary" id="btn-refresh-plugins">Neu laden</button>
+                    <button class="btn-secondary" id="btn-install-plugin">Plugin installieren...</button>
+                </div>
+                <div id="plugin-list" class="plugin-list">
+                    <p class="placeholder-text">Keine Plugins installiert</p>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="btn-primary" id="btn-close-plugin-manager">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Soundfont Manager Dialog (Phase 8) -->
+    <div id="soundfont-manager-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog soundfont-manager-dialog">
+            <h2>Soundfont-Manager</h2>
+            <div class="soundfont-manager-content">
+                <div class="soundfont-toolbar">
+                    <button class="btn-secondary" id="btn-refresh-soundfonts">Neu laden</button>
+                    <button class="btn-secondary" id="btn-import-soundfont">Soundfont importieren...</button>
+                    <button class="btn-secondary" id="btn-show-recommended">Empfohlene Soundfonts</button>
+                </div>
+                <div id="soundfont-list" class="soundfont-list">
+                    <p class="placeholder-text">Keine Soundfonts installiert</p>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="btn-primary" id="btn-close-soundfont-manager">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommended Soundfonts Dialog (Phase 8) -->
+    <div id="recommended-soundfonts-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog recommended-soundfonts-dialog">
+            <h2>Empfohlene Soundfonts</h2>
+            <div class="recommended-soundfonts-content">
+                <p>Hochwertige Soundfonts für bessere Klangqualität:</p>
+                <div id="recommended-soundfonts-list" class="recommended-list"></div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="btn-primary" id="btn-close-recommended">Schließen</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/app.js"></script>
     <script src="js/notation-engine.js"></script>

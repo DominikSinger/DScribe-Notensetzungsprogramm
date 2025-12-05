@@ -306,6 +306,11 @@ class DScribeApp {
             'insert-guitar-tab': () => this.showGuitarTabDialog(),
             'insert-harmonize': () => this.harmonizeMelody(),
             
+            // Extensions menu (Phase 8)
+            'plugins-manager': () => this.showPluginManager(),
+            'soundfonts-manager': () => this.showSoundfontManager(),
+            'omr-settings': () => this.showOMRSettings(),
+            
             // Help menu
             'help-shortcuts': () => this.showShortcuts(),
             'help-about': () => this.showAbout(),
@@ -537,8 +542,38 @@ class DScribeApp {
         }
     }
 
-    // Import handlers (Phase 4)
-    handleImportPDF() { this.showTodoDialog('PDF-Import (OMR in Phase 8)'); }
+    // Import handlers (Phase 4, enhanced in Phase 8)
+    async handleImportPDF() {
+        const result = await window.electron.dialog.openFile({
+            title: 'PDF importieren',
+            filters: [
+                { name: 'PDF-Dateien', extensions: ['pdf'] },
+                { name: 'Bilder', extensions: ['png', 'jpg', 'jpeg'] }
+            ]
+        });
+
+        if (result && !result.canceled && result.filePaths.length > 0) {
+            this.setStatus('Analysiere mit OMR...');
+            
+            try {
+                const omrResult = await window.electron.omr.recognize(result.filePaths[0]);
+                
+                if (omrResult.success && omrResult.measures.length > 0) {
+                    this.currentProject.measures = omrResult.measures;
+                    this.notationEngine.render(this.currentProject.measures);
+                    this.markProjectDirty();
+                    this.setStatus(`OMR erfolgreich: ${omrResult.measures.length} Takte erkannt`);
+                } else {
+                    alert(omrResult.message || 'OMR-Erkennung fehlgeschlagen.\n\nOptical Music Recognition ist noch in der Entwicklung und wird in einem späteren Update vollständig verfügbar sein.');
+                    this.setStatus('OMR nicht verfügbar');
+                }
+            } catch (error) {
+                console.error('OMR error:', error);
+                alert('Fehler bei der OMR-Verarbeitung: ' + error.message);
+                this.setStatus('OMR-Fehler');
+            }
+        }
+    }
     
     // Audio analysis (Phase 5)
     handleImportAudio() { 
@@ -1285,6 +1320,280 @@ class DScribeApp {
               'Ein professionelles Notensatzprogramm mit erweiterten\n' +
               'Audio- und Analysefunktionen.\n\n' +
               '© 2025 - MIT License');
+    }
+    
+    // Plugin Manager (Phase 8)
+    async showPluginManager() {
+        const modal = document.getElementById('plugin-manager-modal');
+        modal.style.display = 'flex';
+        
+        await this.loadPluginList();
+        
+        document.getElementById('btn-refresh-plugins').onclick = async () => {
+            await window.electron.plugins.load();
+            await this.loadPluginList();
+        };
+        
+        document.getElementById('btn-install-plugin').onclick = async () => {
+            const result = await window.electron.dialog.openFile({
+                title: 'Plugin installieren',
+                filters: [{ name: 'Plugin Package', extensions: ['zip'] }]
+            });
+            
+            if (result && !result.canceled && result.filePaths.length > 0) {
+                const success = await window.electron.plugins.install(result.filePaths[0]);
+                if (success) {
+                    await this.loadPluginList();
+                    this.setStatus('Plugin installiert');
+                } else {
+                    alert('Plugin-Installation fehlgeschlagen');
+                }
+            }
+        };
+        
+        document.getElementById('btn-close-plugin-manager').onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+    
+    async loadPluginList() {
+        const plugins = await window.electron.plugins.getAll();
+        const pluginList = document.getElementById('plugin-list');
+        
+        if (plugins.length === 0) {
+            pluginList.innerHTML = '<p class="placeholder-text">Keine Plugins installiert</p>';
+            return;
+        }
+        
+        pluginList.innerHTML = '';
+        
+        plugins.forEach(plugin => {
+            const item = document.createElement('div');
+            item.className = 'plugin-item';
+            
+            const info = document.createElement('div');
+            info.className = 'plugin-info';
+            
+            const name = document.createElement('div');
+            name.className = 'plugin-name';
+            name.textContent = plugin.name;
+            
+            const status = document.createElement('span');
+            status.className = `plugin-status ${plugin.enabled ? 'enabled' : 'disabled'}`;
+            status.textContent = plugin.enabled ? 'Aktiviert' : 'Deaktiviert';
+            name.appendChild(status);
+            
+            const description = document.createElement('div');
+            description.className = 'plugin-description';
+            description.textContent = plugin.description || 'Keine Beschreibung';
+            
+            const meta = document.createElement('div');
+            meta.className = 'plugin-meta';
+            meta.textContent = `Version ${plugin.version} • ${plugin.author}`;
+            
+            info.appendChild(name);
+            info.appendChild(description);
+            info.appendChild(meta);
+            
+            const actions = document.createElement('div');
+            actions.className = 'plugin-actions';
+            
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'btn-secondary';
+            toggleBtn.textContent = plugin.enabled ? 'Deaktivieren' : 'Aktivieren';
+            toggleBtn.onclick = async () => {
+                if (plugin.enabled) {
+                    await window.electron.plugins.disable(plugin.id);
+                } else {
+                    await window.electron.plugins.enable(plugin.id);
+                }
+                await this.loadPluginList();
+            };
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'btn-secondary';
+            removeBtn.textContent = 'Entfernen';
+            removeBtn.onclick = async () => {
+                if (confirm(`Plugin "${plugin.name}" wirklich entfernen?`)) {
+                    await window.electron.plugins.unload(plugin.id);
+                    await this.loadPluginList();
+                }
+            };
+            
+            actions.appendChild(toggleBtn);
+            actions.appendChild(removeBtn);
+            
+            item.appendChild(info);
+            item.appendChild(actions);
+            
+            pluginList.appendChild(item);
+        });
+    }
+    
+    // Soundfont Manager (Phase 8)
+    async showSoundfontManager() {
+        const modal = document.getElementById('soundfont-manager-modal');
+        modal.style.display = 'flex';
+        
+        await this.loadSoundfontList();
+        
+        document.getElementById('btn-refresh-soundfonts').onclick = async () => {
+            await window.electron.soundfonts.load();
+            await this.loadSoundfontList();
+        };
+        
+        document.getElementById('btn-import-soundfont').onclick = async () => {
+            const result = await window.electron.dialog.openFile({
+                title: 'Soundfont importieren',
+                filters: [{ name: 'Soundfont', extensions: ['sf2', 'sf3'] }]
+            });
+            
+            if (result && !result.canceled && result.filePaths.length > 0) {
+                const soundfont = await window.electron.soundfonts.import(result.filePaths[0]);
+                if (soundfont) {
+                    await this.loadSoundfontList();
+                    this.setStatus('Soundfont importiert');
+                } else {
+                    alert('Soundfont-Import fehlgeschlagen');
+                }
+            }
+        };
+        
+        document.getElementById('btn-show-recommended').onclick = () => {
+            this.showRecommendedSoundfonts();
+        };
+        
+        document.getElementById('btn-close-soundfont-manager').onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+    
+    async loadSoundfontList() {
+        const soundfonts = await window.electron.soundfonts.getAll();
+        const soundfontList = document.getElementById('soundfont-list');
+        
+        if (soundfonts.length === 0) {
+            soundfontList.innerHTML = '<p class="placeholder-text">Keine Soundfonts installiert</p>';
+            return;
+        }
+        
+        soundfontList.innerHTML = '';
+        
+        soundfonts.forEach(soundfont => {
+            const item = document.createElement('div');
+            item.className = 'soundfont-item';
+            
+            const info = document.createElement('div');
+            info.className = 'soundfont-info';
+            
+            const name = document.createElement('div');
+            name.className = 'soundfont-name';
+            name.textContent = soundfont.name;
+            
+            const status = document.createElement('span');
+            status.className = `soundfont-status ${soundfont.loaded ? 'active' : 'inactive'}`;
+            status.textContent = soundfont.loaded ? 'Aktiv' : 'Inaktiv';
+            name.appendChild(status);
+            
+            const description = document.createElement('div');
+            description.className = 'soundfont-description';
+            const sizeMB = (soundfont.size / 1024 / 1024).toFixed(2);
+            description.textContent = `Größe: ${sizeMB} MB`;
+            
+            const meta = document.createElement('div');
+            meta.className = 'soundfont-meta';
+            meta.textContent = soundfont.path;
+            
+            info.appendChild(name);
+            info.appendChild(description);
+            info.appendChild(meta);
+            
+            const actions = document.createElement('div');
+            actions.className = 'soundfont-actions';
+            
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'btn-secondary';
+            toggleBtn.textContent = soundfont.loaded ? 'Deaktivieren' : 'Aktivieren';
+            toggleBtn.onclick = async () => {
+                if (soundfont.loaded) {
+                    await window.electron.soundfonts.deactivate(soundfont.id);
+                } else {
+                    await window.electron.soundfonts.activate(soundfont.id);
+                }
+                await this.loadSoundfontList();
+            };
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'btn-secondary';
+            removeBtn.textContent = 'Entfernen';
+            removeBtn.onclick = async () => {
+                if (confirm(`Soundfont "${soundfont.name}" wirklich entfernen?`)) {
+                    await window.electron.soundfonts.remove(soundfont.id);
+                    await this.loadSoundfontList();
+                }
+            };
+            
+            actions.appendChild(toggleBtn);
+            actions.appendChild(removeBtn);
+            
+            item.appendChild(info);
+            item.appendChild(actions);
+            
+            soundfontList.appendChild(item);
+        });
+    }
+    
+    async showRecommendedSoundfonts() {
+        const modal = document.getElementById('recommended-soundfonts-modal');
+        modal.style.display = 'flex';
+        
+        const recommended = await window.electron.soundfonts.getRecommended();
+        const list = document.getElementById('recommended-soundfonts-list');
+        
+        list.innerHTML = '';
+        
+        recommended.forEach(sf => {
+            const item = document.createElement('div');
+            item.className = 'recommended-item';
+            
+            const title = document.createElement('h4');
+            title.textContent = sf.name;
+            
+            const desc = document.createElement('p');
+            desc.textContent = sf.description;
+            
+            const meta = document.createElement('p');
+            meta.className = 'meta';
+            meta.textContent = `Größe: ${sf.size} • Lizenz: ${sf.license}`;
+            
+            const link = document.createElement('button');
+            link.className = 'btn-secondary';
+            link.textContent = 'Website öffnen';
+            link.onclick = () => {
+                window.open(sf.url, '_blank');
+            };
+            
+            item.appendChild(title);
+            item.appendChild(desc);
+            item.appendChild(meta);
+            item.appendChild(link);
+            
+            list.appendChild(item);
+        });
+        
+        document.getElementById('btn-close-recommended').onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+    
+    async showOMRSettings() {
+        const capabilities = await window.electron.omr.getCapabilities();
+        
+        alert('OMR-Einstellungen\n\n' +
+              'Status: ' + capabilities.status + '\n\n' +
+              capabilities.note + '\n\n' +
+              'Unterstützte Formate: ' + capabilities.supportedFormats.join(', ') + '\n\n' +
+              'OMR wird in einem späteren Update vollständig implementiert.');
     }
 
     showError(message) {

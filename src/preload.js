@@ -58,8 +58,45 @@ contextBridge.exposeInMainWorld('electron', {
     fromMusicXML: (filePath) => ipcRenderer.invoke('import:musicxml', filePath)
   },
 
+  // Plugin API (Phase 8)
+  plugins: {
+    getAll: () => ipcRenderer.invoke('plugins:getAll'),
+    load: () => ipcRenderer.invoke('plugins:load'),
+    enable: (pluginId) => ipcRenderer.invoke('plugins:enable', pluginId),
+    disable: (pluginId) => ipcRenderer.invoke('plugins:disable', pluginId),
+    unload: (pluginId) => ipcRenderer.invoke('plugins:unload', pluginId),
+    install: (packagePath) => ipcRenderer.invoke('plugins:install', packagePath)
+  },
+
+  // OMR API (Phase 8)
+  omr: {
+    recognize: (filePath) => ipcRenderer.invoke('omr:recognize', filePath),
+    recognizePDF: (pdfPath) => ipcRenderer.invoke('omr:recognizePDF', pdfPath),
+    getCapabilities: () => ipcRenderer.invoke('omr:getCapabilities')
+  },
+
+  // Soundfont API (Phase 8)
+  soundfonts: {
+    getAll: () => ipcRenderer.invoke('soundfonts:getAll'),
+    load: () => ipcRenderer.invoke('soundfonts:load'),
+    activate: (soundfontId) => ipcRenderer.invoke('soundfonts:activate', soundfontId),
+    deactivate: (soundfontId) => ipcRenderer.invoke('soundfonts:deactivate', soundfontId),
+    import: (sourcePath) => ipcRenderer.invoke('soundfonts:import', sourcePath),
+    remove: (soundfontId) => ipcRenderer.invoke('soundfonts:remove', soundfontId),
+    getInfo: (soundfontId) => ipcRenderer.invoke('soundfonts:getInfo', soundfontId),
+    getRecommended: () => ipcRenderer.invoke('soundfonts:getRecommended')
+  },
+
   // Menu actions listener
   onMenuAction: (callback) => {
     ipcRenderer.on('menu-action', (event, action, ...args) => callback(action, ...args));
+  },
+  
+  // Plugin/Soundfont reload listeners (Phase 8)
+  onPluginsReloaded: (callback) => {
+    ipcRenderer.on('plugins-reloaded', callback);
+  },
+  onSoundfontsReloaded: (callback) => {
+    ipcRenderer.on('soundfonts-reloaded', callback);
   }
 });

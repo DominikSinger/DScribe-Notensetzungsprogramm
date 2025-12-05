@@ -1289,3 +1289,178 @@ body.dark-mode .context-menu-item .shortcut-hint {
     color: #888;
 }
 
+/* Plugin Manager (Phase 8) */
+.plugin-manager-dialog,
+.soundfont-manager-dialog {
+    max-width: 700px;
+    width: 90%;
+}
+
+.plugin-manager-content,
+.soundfont-manager-content {
+    padding: 20px;
+}
+
+.plugin-toolbar,
+.soundfont-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.plugin-list,
+.soundfont-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.plugin-item,
+.soundfont-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background: #f9f9f9;
+    transition: all 0.2s;
+}
+
+.plugin-item:hover,
+.soundfont-item:hover {
+    background: #f0f0f0;
+    border-color: #2196f3;
+}
+
+.plugin-info,
+.soundfont-info {
+    flex: 1;
+}
+
+.plugin-name,
+.soundfont-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.plugin-description,
+.soundfont-description {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.plugin-meta,
+.soundfont-meta {
+    font-size: 11px;
+    color: #888;
+}
+
+.plugin-actions,
+.soundfont-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.plugin-status,
+.soundfont-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.plugin-status.enabled {
+    background: #4caf50;
+    color: white;
+}
+
+.plugin-status.disabled {
+    background: #9e9e9e;
+    color: white;
+}
+
+.soundfont-status.active {
+    background: #2196f3;
+    color: white;
+}
+
+.soundfont-status.inactive {
+    background: #9e9e9e;
+    color: white;
+}
+
+.recommended-list {
+    margin-top: 15px;
+}
+
+.recommended-item {
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background: #f9f9f9;
+}
+
+.recommended-item h4 {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.recommended-item p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #666;
+}
+
+.recommended-item .meta {
+    font-size: 11px;
+    color: #888;
+}
+
+.recommended-item button {
+    margin-top: 10px;
+}
+
+body.dark-mode .plugin-toolbar,
+body.dark-mode .soundfont-toolbar {
+    border-bottom-color: #404040;
+}
+
+body.dark-mode .plugin-item,
+body.dark-mode .soundfont-item,
+body.dark-mode .recommended-item {
+    background: #252525;
+    border-color: #404040;
+}
+
+body.dark-mode .plugin-item:hover,
+body.dark-mode .soundfont-item:hover {
+    background: #2a2a2a;
+}
+
+body.dark-mode .plugin-name,
+body.dark-mode .soundfont-name,
+body.dark-mode .recommended-item h4 {
+    color: #e0e0e0;
+}
+
+body.dark-mode .plugin-description,
+body.dark-mode .soundfont-description,
+body.dark-mode .recommended-item p {
+    color: #b0b0b0;
+}
+
+body.dark-mode .plugin-meta,
+body.dark-mode .soundfont-meta,
+body.dark-mode .recommended-item .meta {
+    color: #888;
+}
+
