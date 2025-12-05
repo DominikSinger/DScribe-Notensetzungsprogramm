@@ -17,7 +17,10 @@
     "fs-extra": "11.2.0",
     "jspdf": "^3.0.4",
     "opensheetmusicdisplay": "^1.9.2",
+    "pdf-poppler": "^0.2.1",
     "pitchfinder": "^2.3.2",
+    "sharp": "^0.33.5",
+    "tesseract.js": "^5.1.1",
     "vexflow": "^5.0.0",
     "xml2js": "^0.6.2"
   },
