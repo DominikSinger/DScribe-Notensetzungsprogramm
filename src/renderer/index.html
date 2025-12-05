@@ -226,9 +226,37 @@
         </div>
     </div>
 
+    <!-- Audio Analysis Modal (Phase 5) -->
+    <div id="audio-analysis-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog audio-analysis-dialog">
+            <h2>Audio-Analyse</h2>
+            <div class="audio-analysis-content">
+                <div class="analysis-controls">
+                    <button id="btn-start-mic" class="analysis-btn">🎤 Mikrofon starten</button>
+                    <button id="btn-stop-mic" class="analysis-btn" disabled>⏹ Mikrofon stoppen</button>
+                    <button id="btn-import-audio" class="analysis-btn">📁 Audio-Datei importieren</button>
+                </div>
+                
+                <div class="pitch-display">
+                    <div class="pitch-label">Erkannte Note:</div>
+                    <div id="detected-note" class="detected-note">-</div>
+                    <div id="detected-frequency" class="detected-frequency">- Hz</div>
+                </div>
+                
+                <canvas id="audio-visualizer" width="600" height="200"></canvas>
+                
+                <div class="analysis-actions">
+                    <button id="btn-add-detected-note" class="btn-primary" disabled>Note hinzufügen</button>
+                    <button id="btn-close-analysis" class="btn-secondary">Schließen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/app.js"></script>
     <script src="js/notation-engine.js"></script>
     <script src="js/playback-engine.js"></script>
+    <script src="js/audio-analysis-engine.js"></script>
 </body>
 </html>

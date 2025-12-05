@@ -27,6 +27,10 @@ class DScribeApp {
         // Initialize playback engine
         this.playbackEngine = new PlaybackEngine();
         
+        // Initialize audio analysis engine (Phase 5)
+        this.audioAnalysisEngine = new AudioAnalysisEngine();
+        await this.audioAnalysisEngine.initialize();
+        
         // Setup event listeners
         this.setupEventListeners();
         
@@ -412,7 +416,11 @@ class DScribeApp {
 
     // Import handlers (Phase 4)
     handleImportPDF() { this.showTodoDialog('PDF-Import (OMR in Phase 8)'); }
-    handleImportAudio() { this.showTodoDialog('Audio-Import (Phase 5)'); }
+    
+    // Audio analysis (Phase 5)
+    handleImportAudio() { 
+        this.showAudioAnalysisDialog();
+    }
     
     async handleImportMIDI() {
         try {
@@ -969,6 +977,116 @@ class DScribeApp {
     setStatus(text) {
         document.getElementById('status-text').textContent = text;
         console.log('Status:', text);
+    }
+    
+    // Audio Analysis Dialog (Phase 5)
+    showAudioAnalysisDialog() {
+        const modal = document.getElementById('audio-analysis-modal');
+        modal.style.display = 'flex';
+        
+        // Setup event handlers
+        document.getElementById('btn-start-mic').onclick = () => this.startMicrophone();
+        document.getElementById('btn-stop-mic').onclick = () => this.stopMicrophone();
+        document.getElementById('btn-import-audio').onclick = () => this.importAudioFile();
+        document.getElementById('btn-add-detected-note').onclick = () => this.addDetectedNote();
+        document.getElementById('btn-close-analysis').onclick = () => this.closeAudioAnalysis();
+        
+        // Setup pitch detection callback
+        this.audioAnalysisEngine.onPitchDetected = (frequency, noteName) => {
+            document.getElementById('detected-note').textContent = noteName;
+            document.getElementById('detected-frequency').textContent = frequency.toFixed(2) + ' Hz';
+            document.getElementById('btn-add-detected-note').disabled = false;
+        };
+    }
+    
+    async startMicrophone() {
+        const result = await this.audioAnalysisEngine.startMicrophone();
+        
+        if (result.success) {
+            document.getElementById('btn-start-mic').disabled = true;
+            document.getElementById('btn-stop-mic').disabled = false;
+            this.audioAnalysisEngine.startVisualization('audio-visualizer');
+            this.setStatus('Mikrofon aktiv - sprechen oder singen Sie');
+        } else {
+            alert('Mikrofon-Zugriff fehlgeschlagen: ' + result.error);
+        }
+    }
+    
+    stopMicrophone() {
+        this.audioAnalysisEngine.stopMicrophone();
+        this.audioAnalysisEngine.stopVisualization();
+        document.getElementById('btn-start-mic').disabled = false;
+        document.getElementById('btn-stop-mic').disabled = true;
+        this.setStatus('Mikrofon gestoppt');
+    }
+    
+    async importAudioFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'audio/*';
+        
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            this.setStatus('Analysiere Audio-Datei...');
+            
+            const importResult = await this.audioAnalysisEngine.importAudioFile(file);
+            
+            if (importResult.success) {
+                this.setStatus('Extrahiere Noten...');
+                const analysisResult = await this.audioAnalysisEngine.analyzeAudioBuffer(importResult.buffer);
+                
+                if (analysisResult.success && analysisResult.notes.length > 0) {
+                    // Add notes to score
+                    const measureIndex = this.currentProject.measures.length - 1;
+                    
+                    analysisResult.notes.forEach(note => {
+                        if (!this.currentProject.measures[measureIndex]) {
+                            this.currentProject.measures[measureIndex] = { notes: [] };
+                        }
+                        
+                        this.currentProject.measures[measureIndex].notes.push({
+                            keys: note.keys,
+                            duration: note.duration
+                        });
+                    });
+                    
+                    this.notationEngine.render(this.currentProject.measures);
+                    this.markProjectDirty();
+                    this.setStatus(`${analysisResult.notes.length} Noten extrahiert`);
+                    alert(`Erfolgreich ${analysisResult.notes.length} Noten aus Audio extrahiert!`);
+                } else {
+                    alert('Keine Noten in der Audio-Datei erkannt');
+                    this.setStatus('Keine Noten erkannt');
+                }
+            } else {
+                alert('Audio-Import fehlgeschlagen: ' + importResult.error);
+                this.setStatus('Audio-Import fehlgeschlagen');
+            }
+        };
+        
+        input.click();
+    }
+    
+    addDetectedNote() {
+        const noteName = document.getElementById('detected-note').textContent;
+        if (noteName === '-') return;
+        
+        const vexFlowNote = this.audioAnalysisEngine.noteToVexFlow(noteName);
+        this.addNote(vexFlowNote, 'q');
+        this.setStatus(`Note ${noteName} hinzugefügt`);
+    }
+    
+    closeAudioAnalysis() {
+        this.audioAnalysisEngine.stopMicrophone();
+        this.audioAnalysisEngine.stopVisualization();
+        document.getElementById('audio-analysis-modal').style.display = 'none';
+        document.getElementById('btn-start-mic').disabled = false;
+        document.getElementById('btn-stop-mic').disabled = true;
+        document.getElementById('btn-add-detected-note').disabled = true;
+        document.getElementById('detected-note').textContent = '-';
+        document.getElementById('detected-frequency').textContent = '- Hz';
     }
 }
 

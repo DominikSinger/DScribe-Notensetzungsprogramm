@@ -633,6 +633,96 @@ body {
     color: #333;
 }
 
+/* Audio Analysis Dialog (Phase 5) */
+.audio-analysis-dialog {
+    min-width: 700px;
+    max-width: 800px;
+}
+
+.audio-analysis-dialog h2 {
+    margin: 0 0 20px 0;
+    color: #333;
+}
+
+.audio-analysis-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.analysis-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.analysis-btn {
+    padding: 10px 16px;
+    background: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.analysis-btn:hover:not(:disabled) {
+    background: #1976d2;
+}
+
+.analysis-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.pitch-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(to bottom, #f5f5f5, #e8e8e8);
+    border-radius: 8px;
+    border: 2px solid #ddd;
+}
+
+.pitch-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.detected-note {
+    font-size: 48px;
+    font-weight: bold;
+    color: #2196f3;
+    font-family: 'Courier New', monospace;
+    min-width: 120px;
+    text-align: center;
+}
+
+.detected-frequency {
+    font-size: 16px;
+    color: #666;
+    margin-top: 5px;
+}
+
+#audio-visualizer {
+    width: 100%;
+    height: 200px;
+    background: #1a1a1a;
+    border-radius: 4px;
+    border: 1px solid #333;
+}
+
+.analysis-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
 .modal-btn {
     padding: 8px 16px;
     border: 1px solid #ccc;
