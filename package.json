@@ -7,8 +7,9 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "pack": "echo \"Use electron-builder\"",
-    "dist": "echo \"Use electron-builder\""
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win"
   },
   "dependencies": {
     "@tonejs/midi": "^2.0.28",

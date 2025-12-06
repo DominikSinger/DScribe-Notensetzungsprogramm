@@ -11,6 +11,8 @@ win:
   target:
     - nsis
   icon: icon.ico
+npmRebuild: false
+buildDependenciesFromSource: false
 nsis:
   oneClick: false
   perMachine: false
