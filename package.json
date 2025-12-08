@@ -20,7 +20,9 @@
     "opensheetmusicdisplay": "^1.9.2",
     "pitchfinder": "^2.3.2",
     "vexflow": "^5.0.0",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "lamejs": "^2.1.0",
+    "pdfjs-dist": "^3.11.174"
   },
   "devDependencies": {
     "electron": "30.0.9",
