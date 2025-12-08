@@ -11,6 +11,60 @@
 </head>
 <body>
     <div id="app">
+        <!-- Menu Bar -->
+        <div id="menu-bar">
+            <div class="menu-item">
+                <span class="menu-label">Datei</span>
+                <div class="menu-dropdown">
+                    <div class="menu-option" data-action="new">Neu</div>
+                    <div class="menu-option" data-action="open">Öffnen...</div>
+                    <div class="menu-option" data-action="save">Speichern</div>
+                    <div class="menu-option" data-action="save-as">Speichern unter...</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-option" data-action="export-pdf">Als PDF exportieren</div>
+                    <div class="menu-option" data-action="export-midi">Als MIDI exportieren</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-option" data-action="quit">Beenden</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                <span class="menu-label">Bearbeiten</span>
+                <div class="menu-dropdown">
+                    <div class="menu-option" data-action="undo">Rückgängig</div>
+                    <div class="menu-option" data-action="redo">Wiederherstellen</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-option" data-action="cut">Ausschneiden</div>
+                    <div class="menu-option" data-action="copy">Kopieren</div>
+                    <div class="menu-option" data-action="paste">Einfügen</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                <span class="menu-label">Ansicht</span>
+                <div class="menu-dropdown">
+                    <div class="menu-option" data-action="zoom-in">Vergrößern</div>
+                    <div class="menu-option" data-action="zoom-out">Verkleinern</div>
+                    <div class="menu-option" data-action="zoom-reset">Zoom zurücksetzen</div>
+                    <div class="menu-separator"></div>
+                    <div class="menu-option" data-action="toggle-dark-mode">Dunkelmodus</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                <span class="menu-label">Einfügen</span>
+                <div class="menu-dropdown">
+                    <div class="menu-option" data-action="add-measure">Takt hinzufügen</div>
+                    <div class="menu-option" data-action="add-note">Note hinzufügen</div>
+                    <div class="menu-option" data-action="add-rest">Pause hinzufügen</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                <span class="menu-label">Hilfe</span>
+                <div class="menu-dropdown">
+                    <div class="menu-option" data-action="help">Dokumentation</div>
+                    <div class="menu-option" data-action="about">Über DScribe</div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Toolbar -->
         <div id="toolbar">
             <div class="toolbar-section">

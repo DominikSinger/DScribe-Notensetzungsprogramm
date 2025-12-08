@@ -20,6 +20,65 @@ body {
     height: 100vh;
 }
 
+/* Menu Bar */
+#menu-bar {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+    border-bottom: 1px solid #ccc;
+    padding: 0;
+    font-size: 13px;
+}
+
+.menu-item {
+    position: relative;
+    user-select: none;
+}
+
+.menu-label {
+    display: block;
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.menu-label:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.menu-item:hover .menu-dropdown {
+    display: block;
+}
+
+.menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    min-width: 200px;
+    z-index: 1000;
+}
+
+.menu-option {
+    padding: 8px 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.menu-option:hover {
+    background-color: #2196f3;
+    color: white;
+}
+
+.menu-separator {
+    height: 1px;
+    background-color: #ddd;
+    margin: 4px 0;
+}
+
 /* Toolbar */
 #toolbar {
     display: flex;
@@ -250,12 +309,12 @@ body.dark-mode .new-tab-btn:hover {
 }
 
 .palette-btn {
-    padding: 12px 8px;
+    padding: 8px 6px;
     border: 1px solid #ccc;
     background: white;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 24px;
+    font-size: 18px;
     transition: all 0.2s;
     text-align: center;
 }
@@ -291,14 +350,16 @@ body.dark-mode .new-tab-btn:hover {
 #score-header {
     background-color: white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    width: 720px;
+    width: 100%;
+    max-width: 850px;
     padding: 20px 40px 10px;
     margin-bottom: 10px;
     text-align: center;
+    box-sizing: border-box;
 }
 
 #score-title-display {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     margin-bottom: 8px;
     outline: none;
@@ -312,7 +373,7 @@ body.dark-mode .new-tab-btn:hover {
 }
 
 #score-composer-display {
-    font-size: 16px;
+    font-size: 14px;
     font-style: italic;
     color: #555;
     outline: none;
@@ -328,26 +389,32 @@ body.dark-mode .new-tab-btn:hover {
 #score-canvas {
     background-color: white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    min-height: 600px;
-    width: 720px;
+    min-height: 400px;
+    width: 100%;
+    max-width: 850px;
     padding: 20px;
     position: relative;
+    box-sizing: border-box;
 }
 
 #score-canvas canvas {
     display: block;
     margin: 0 auto;
+    max-width: 100%;
+    height: auto;
 }
 
 #score-controls {
     background-color: white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    width: 720px;
+    width: 100%;
+    max-width: 850px;
     padding: 15px;
     margin-top: 10px;
     display: flex;
     gap: 10px;
     justify-content: center;
+    box-sizing: border-box;
 }
 
 .score-control-btn {

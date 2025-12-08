@@ -246,6 +246,49 @@ class DScribeApp {
             console.log('Menu action:', action, args);
             this.handleMenuAction(action, ...args);
         });
+        
+        // Setup web-based menu bar event listeners
+        const menuOptions = document.querySelectorAll('.menu-option');
+        menuOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const action = option.dataset.action;
+                this.handleWebMenuAction(action);
+            });
+        });
+    }
+    
+    handleWebMenuAction(action) {
+        // Map web menu actions to existing handlers
+        const actionMap = {
+            'new': () => this.handleFileNew(),
+            'open': () => this.handleFileOpen(),
+            'save': () => this.handleFileSave(),
+            'save-as': () => this.handleFileSaveAs(),
+            'export-pdf': () => this.handleExportPDF(),
+            'export-midi': () => this.handleExportMIDI(),
+            'quit': () => window.close(),
+            'undo': () => this.handleUndo(),
+            'redo': () => this.handleRedo(),
+            'cut': () => this.handleCut(),
+            'copy': () => this.handleCopy(),
+            'paste': () => this.handlePaste(),
+            'zoom-in': () => this.handleZoomIn(),
+            'zoom-out': () => this.handleZoomOut(),
+            'zoom-reset': () => this.handleZoomReset(),
+            'toggle-dark-mode': () => this.toggleDarkMode(),
+            'add-measure': () => this.addMeasure(),
+            'add-note': () => this.addNote(),
+            'add-rest': () => this.addRest(),
+            'help': () => this.showHelp(),
+            'about': () => this.showAbout()
+        };
+        
+        const handler = actionMap[action];
+        if (handler) {
+            handler();
+        } else {
+            console.warn('Unhandled menu action:', action);
+        }
     }
 
     async handleMenuAction(action, ...args) {

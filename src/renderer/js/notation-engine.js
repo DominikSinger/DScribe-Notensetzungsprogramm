@@ -46,11 +46,15 @@ class NotationEngine {
         // Clear container
         this.container.innerHTML = '';
         
-        // Create canvas for VexFlow
+        // Get container dimensions
+        const containerWidth = this.container.clientWidth || 800;
+        const containerHeight = Math.max(this.container.clientHeight || 600, 600);
+        
+        // Create canvas for VexFlow with responsive sizing
         const canvas = document.createElement('canvas');
         canvas.id = 'vexflow-canvas';
-        canvas.width = 700;
-        canvas.height = 1000;
+        canvas.width = Math.min(containerWidth - 40, 800);  // Max 800px width
+        canvas.height = containerHeight;
         this.container.appendChild(canvas);
         
         // Create VexFlow renderer
@@ -223,6 +227,12 @@ class NotationEngine {
             this.context.clear();
             
             if (this.measures.length === 0) {
+                // Create at least one empty stave
+                const stave = new VF.Stave(40, 40, 300);
+                stave.addClef(this.currentClef);
+                stave.addKeySignature(this.getVexFlowKeySignature(this.currentKeySignature));
+                stave.addTimeSignature(this.currentTimeSignature);
+                stave.setContext(this.context).draw();
                 return;
             }
             
