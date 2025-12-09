@@ -346,11 +346,29 @@ class NotationEngine {
         if (measureIndex === null) {
             measureIndex = this.currentMeasure;
         }
-        
         if (this.measures[measureIndex] && this.measures[measureIndex].notes[noteIndex]) {
             this.measures[measureIndex].notes[noteIndex].lyrics = text;
-            // TODO: Render lyrics below notes
+            this.renderLyrics(measureIndex);
             console.log('Lyrics added:', text);
+        }
+    }
+    
+    renderLyrics(measureIndex) {
+        const measure = this.measures[measureIndex];
+        if (!measure) return;
+        const ctx = this.canvas?.getContext('2d');
+        if (!ctx) return;
+        ctx.fillStyle = '#000000';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        if (measure.notes) {
+            measure.notes.forEach((note, idx) => {
+                if (note.lyrics) {
+                    const x = 50 + (idx * 40);
+                    const y = 150;
+                    ctx.fillText(note.lyrics, x, y);
+                }
+            });
         }
     }
 
@@ -358,17 +376,47 @@ class NotationEngine {
         if (measureIndex === null) {
             measureIndex = this.currentMeasure;
         }
-        
         if (this.measures[measureIndex]) {
             this.measures[measureIndex].chord = chord;
-            // TODO: Render chord symbols above staff
+            this.renderChordSymbol(measureIndex, chord);
             console.log('Chord symbol added:', chord);
         }
     }
+    
+    renderChordSymbol(measureIndex, chord) {
+        const ctx = this.canvas?.getContext('2d');
+        if (!ctx) return;
+        ctx.fillStyle = '#0066CC';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        const x = 50 + (measureIndex * 40);
+        const y = 40;
+        ctx.fillText(chord, x, y);
+    }
 
     transpose(semitones) {
-        // TODO: Implement transposition
-        console.log('TODO: Transpose by', semitones, 'semitones');
+        const noteMap = { 'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11 };
+        const measure = this.measures[this.currentMeasure];
+        if (!measure || !measure.notes) return;
+        
+        measure.notes.forEach(note => {
+            if (note.key) {
+                const noteName = note.key.charAt(0);
+                const octave = parseInt(note.key.substring(1));
+                let noteValue = noteMap[noteName] || 0;
+                noteValue += semitones;
+                
+                let newOctave = octave;
+                while (noteValue < 0) { noteValue += 12; newOctave--; }
+                while (noteValue >= 12) { noteValue -= 12; newOctave++; }
+                
+                const newNoteName = Object.keys(noteMap).find(k => noteMap[k] === noteValue);
+                note.key = `${newNoteName}${newOctave}`;
+            }
+        });
+        
+        console.log(`Transposed by ${semitones} semitones`);
+        this.render();
     }
 
     addDot(noteIndex, measureIndex = null) {
@@ -388,7 +436,24 @@ class NotationEngine {
             measureIndex = this.currentMeasure;
         }
         
-        // TODO: Implement triplet notation
-        console.log('TODO: Make triplet for notes', noteIndices);
+        const measure = this.measures[measureIndex];
+        if (!measure || !measure.notes) return;
+        
+        noteIndices.forEach(idx => {
+            if (measure.notes[idx]) {
+                measure.notes[idx].triplet = true;
+                measure.notes[idx].duration = this.calculateTripletDuration(measure.notes[idx].duration);
+            }
+        });
+        
+        console.log('Triplet created for notes:', noteIndices);
+        this.render();
+    }
+    
+    calculateTripletDuration(duration) {
+        // Triplets are 2/3 of the original duration
+        const durationMap = { 'w': 4, 'h': 2, 'q': 1, '8': 0.5, '16': 0.25 };
+        const value = durationMap[duration] || 1;
+        return value * 2 / 3;
     }
 }

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:;">
+    <title>DScribe - Notensatzprogramm (Test-Version)</title>
+    <link rel="stylesheet" href="css/main.css">
+    <!-- VexFlow Library -->
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Menu Bar -->
+        <div id="menu-bar">
+            <div class="menu-item">
+                <span class="menu-label">Datei</span>
+                <div class="menu-dropdown">
+                    <div class="menu-option" data-action="new">Neu</div>
+                    <div class="menu-option" data-action="save">Speichern</div>
+                    <div class="menu-option" data-action="export-pdf">Als PDF exportieren</div>
+                    <div class="menu-option" data-action="export-midi">Als MIDI exportieren</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                <span class="menu-label">Bearbeiten</span>
+                <div class="menu-dropdown">
+                    <div class="menu-option" data-action="undo">Rückgängig</div>
+                    <div class="menu-option" data-action="redo">Wiederherstellen</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                <span class="menu-label">Ansicht</span>
+                <div class="menu-dropdown">
+                    <div class="menu-option" data-action="zoom-in">Vergrößern</div>
+                    <div class="menu-option" data-action="zoom-out">Verkleinern</div>
+                    <div class="menu-option" data-action="toggle-dark-mode">Dunkelmodus</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                <span class="menu-label">Einfügen</span>
+                <div class="menu-dropdown">
+                    <div class="menu-option" data-action="add-measure">Takt hinzufügen</div>
+                    <div class="menu-option" data-action="add-note">Note hinzufügen</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div id="toolbar">
+            <div class="toolbar-section">
+                <button id="btn-new" class="toolbar-btn" title="Neues Projekt">📄</button>
+                <button id="btn-save" class="toolbar-btn" title="Speichern">💾</button>
+            </div>
+            <div class="toolbar-separator"></div>
+            <div class="toolbar-section">
+                <button id="btn-undo" class="toolbar-btn" title="Rückgängig">↶</button>
+                <button id="btn-redo" class="toolbar-btn" title="Wiederherstellen">↷</button>
+            </div>
+            <div class="toolbar-separator"></div>
+            <div class="toolbar-section">
+                <button id="btn-zoom-out" class="toolbar-btn" title="Verkleinern">🔍−</button>
+                <span id="zoom-level" class="zoom-display">100%</span>
+                <button id="btn-zoom-in" class="toolbar-btn" title="Vergrößern">🔍+</button>
+            </div>
+            <div class="toolbar-separator"></div>
+            <div class="toolbar-section">
+                <button id="btn-play" class="toolbar-btn" title="Abspielen">▶</button>
+                <button id="btn-stop" class="toolbar-btn" title="Stopp">⏹</button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content">
+            <!-- Score Area -->
+            <div id="score-area">
+                <canvas id="score-canvas" width="1000" height="600"></canvas>
+            </div>
+
+            <!-- Side Panel -->
+            <div id="side-panel">
+                <div id="properties-panel">
+                    <h3>Eigenschaften</h3>
+                    <div id="properties-content">
+                        <p>Projektinformationen werden hier angezeigt</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="status-bar">
+            <span id="status-text">Bereit</span>
+            <span id="zoom-info">100%</span>
+        </div>
+    </div>
+
+    <!-- Embedding all modules as inline scripts for testing -->
+    <script>
+        // Mock electron API for testing
+        window.electron = {
+            app: {
+                getVersion: async () => '13.0.0'
+            },
+            dialog: {
+                showOpenDialog: async (options) => ({ filePaths: [] }),
+                showSaveDialog: async (options) => ({ filePath: null })
+            }
+        };
+
+        // Create a simple logger
+        const logger = {
+            log: (msg) => console.log(`[LOG] ${msg}`),
+            error: (msg) => console.error(`[ERROR] ${msg}`),
+            warn: (msg) => console.warn(`[WARN] ${msg}`)
+        };
+    </script>
+
+    <!-- Load Core Modules -->
+    <script src="js/notation-engine.js"></script>
+    <script src="js/playback-engine.js"></script>
+    <script src="js/harmony-engine.js"></script>
+    <script src="js/audio-analysis-engine.js"></script>
+
+    <!-- Load Main App -->
+    <script src="js/app.js"></script>
+
+    <!-- Initialize App -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎵 DScribe Test-Version initialisiert');
+            
+            // Check if modules loaded correctly
+            if (typeof NotationEngine !== 'undefined') {
+                console.log('✅ NotationEngine geladen');
+            } else {
+                console.error('❌ NotationEngine nicht geladen');
+            }
+            
+            if (typeof PlaybackEngine !== 'undefined') {
+                console.log('✅ PlaybackEngine geladen');
+            } else {
+                console.error('❌ PlaybackEngine nicht geladen');
+            }
+
+            // Initialize the app when DOM is ready
+            if (typeof DScribeApp !== 'undefined') {
+                try {
+                    window.dscribeApp = new DScribeApp();
+                    console.log('✅ DScribeApp initialisiert');
+                } catch (error) {
+                    console.error('❌ Fehler beim Initialisieren:', error);
+                }
+            } else {
+                console.error('❌ DScribeApp-Klasse nicht gefunden');
+            }
+
+            // Setup menu click handlers
+            setupMenuHandlers();
+        });
+
+        function setupMenuHandlers() {
+            document.querySelectorAll('.menu-option').forEach(option => {
+                option.addEventListener('click', (e) => {
+                    const action = e.target.getAttribute('data-action');
+                    console.log('🎵 Menu-Action:', action);
+                    handleMenuAction(action);
+                });
+            });
+
+            document.querySelectorAll('.toolbar-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.target.closest('.toolbar-btn')?.id;
+                    console.log('🎵 Toolbar-Aktion:', id);
+                });
+            });
+        }
+
+        function handleMenuAction(action) {
+            switch(action) {
+                case 'new':
+                    if (window.dscribeApp) {
+                        window.dscribeApp.newProject();
+                    }
+                    break;
+                case 'zoom-in':
+                    if (window.dscribeApp) {
+                        window.dscribeApp.zoom += 10;
+                        window.dscribeApp.updateZoom();
+                    }
+                    break;
+                case 'zoom-out':
+                    if (window.dscribeApp) {
+                        window.dscribeApp.zoom -= 10;
+                        window.dscribeApp.updateZoom();
+                    }
+                    break;
+                case 'toggle-dark-mode':
+                    if (window.dscribeApp) {
+                        window.dscribeApp.toggleDarkMode();
+                    }
+                    break;
+                case 'add-note':
+                    console.log('📝 Noten-Modus aktiviert');
+                    break;
+                case 'add-measure':
+                    if (window.dscribeApp && window.dscribeApp.notationEngine) {
+                        window.dscribeApp.notationEngine.addMeasure();
+                    }
+                    break;
+                default:
+                    alert(`Aktion: ${action}`);
+            }
+        }
+    </script>
+
+    <!-- Debug Info -->
+    <script>
+        console.log('%c🎵 DScribe v13.0.0 - Test-Version', 'color: blue; font-size: 16px; font-weight: bold;');
+        console.log('%cAlles geladen! Öffne die Browser-Konsole (F12) für Debugging.', 'color: green; font-size: 14px;');
+    </script>
+</body>
+</html>

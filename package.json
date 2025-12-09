@@ -10,7 +10,12 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",
-    "dist:portable": "electron-builder --win --portable"
+    "dist:portable": "electron-builder --win --portable",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:core": "jest tests/core-engines.spec.js",
+    "test:features": "jest tests/advanced-features.spec.js",
+    "test:coverage": "jest --coverage --collectCoverageFrom='src/**/*.js'"
   },
   "dependencies": {
     "@tonejs/midi": "^2.0.28",
@@ -26,6 +31,8 @@
   },
   "devDependencies": {
     "electron": "30.0.9",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^26.0.12",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
   }
 }
