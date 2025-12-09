@@ -22,6 +22,8 @@ class FeaturesIntegration {
             const DrumNotation = require('./drum-notation');
             const PerformanceMode = require('./performance-mode');
             const JazzChords = require('./jazz-chords');
+            const LyricsEngine = require('./lyrics-engine');
+            const RepetitionEngine = require('./repetition-engine');
 
             // Instanziiere Module
             this.modules.audioSplitter = new AudioSplitter(logger);
@@ -30,6 +32,8 @@ class FeaturesIntegration {
             this.modules.drumNotation = new DrumNotation();
             this.modules.performanceMode = new PerformanceMode();
             this.modules.jazzChords = new JazzChords();
+            this.modules.lyricsEngine = new LyricsEngine(logger);
+            this.modules.repetitionEngine = new RepetitionEngine(logger);
 
             this.isInitialized = true;
             console.log('All Feature Modules initialized successfully');
@@ -116,6 +120,33 @@ class FeaturesIntegration {
                         'Jazz Progressions',
                         'Lead Sheet Generation',
                         'Chord Voicing Detection'
+                    ]
+                },
+                'Liedtext (Lyrics)': {
+                    status: 'FULLY IMPLEMENTED',
+                    module: 'lyricsEngine',
+                    capabilities: [
+                        'Multi-verse Lyrics Support',
+                        'Syllable-to-Note Alignment',
+                        'Hyphenation Support',
+                        'Lyric Sheet Generation',
+                        'PDF Export with Formatting',
+                        'Text Export',
+                        'VexFlow Annotation Integration'
+                    ]
+                },
+                'Wiederholungen (Repetitions)': {
+                    status: 'FULLY IMPLEMENTED',
+                    module: 'repetitionEngine',
+                    capabilities: [
+                        'Repeat Signs (|:, :|)',
+                        'D.C. (Da Capo)',
+                        'D.S. (Dal Segno)',
+                        'Fine & Coda Marks',
+                        'Segno Symbols',
+                        'Complex Sequences (D.S. al Fine, D.C. al Coda)',
+                        'Playback Sequence Generation',
+                        'Duration Calculation'
                     ]
                 }
             }
@@ -209,6 +240,56 @@ class FeaturesIntegration {
     }
 
     /**
+     * Gibt API für Lyrics-Engine zurück
+     */
+    getLyricsAPI() {
+        return {
+            addLyricsToMeasure: (measureIndex, syllables, verseNumber) => 
+                this.modules.lyricsEngine.addLyricsToMeasure(measureIndex, syllables, verseNumber),
+            alignSyllablesToNotes: (measureIndex, notes, syllables, verseNumber) => 
+                this.modules.lyricsEngine.alignSyllablesToNotes(measureIndex, notes, syllables, verseNumber),
+            getLyricsForMeasure: (measureIndex, verseNumber) => 
+                this.modules.lyricsEngine.getLyricsForMeasure(measureIndex, verseNumber),
+            getAllVersesForMeasure: (measureIndex) => 
+                this.modules.lyricsEngine.getAllVersesForMeasure(measureIndex),
+            generateLyricSheet: (title, composer) => 
+                this.modules.lyricsEngine.generateLyricSheet(title, composer),
+            exportLyricsToFile: (filePath, projectData) => 
+                this.modules.lyricsEngine.exportLyricsToFile(filePath, projectData),
+            exportLyricsToPDF: (filePath, projectData) => 
+                this.modules.lyricsEngine.exportLyricsToPDF(filePath, projectData),
+            parseLyricsFromText: (lyricsText) => 
+                this.modules.lyricsEngine.parseLyricsFromText(lyricsText)
+        };
+    }
+
+    /**
+     * Gibt API für Repetition-Engine zurück
+     */
+    getRepetitionAPI() {
+        return {
+            addRepetitionMark: (measureIndex, markType, markLabel) => 
+                this.modules.repetitionEngine.addRepetitionMark(measureIndex, markType, markLabel),
+            removeRepetitionMark: (measureIndex, markType) => 
+                this.modules.repetitionEngine.removeRepetitionMark(measureIndex, markType),
+            getAllRepetitionMarks: () => 
+                this.modules.repetitionEngine.getAllRepetitionMarks(),
+            getMarksAtMeasure: (measureIndex) => 
+                this.modules.repetitionEngine.getMarksAtMeasure(measureIndex),
+            generatePlaybackSequence: (totalMeasures) => 
+                this.modules.repetitionEngine.generatePlaybackSequence(totalMeasures),
+            generateRepetitionNotation: () => 
+                this.modules.repetitionEngine.generateRepetitionNotation(),
+            exportRepetitionMap: (filePath, projectData) => 
+                this.modules.repetitionEngine.exportRepetitionMap(filePath, projectData),
+            calculateTotalDuration: (measureDurations) => 
+                this.modules.repetitionEngine.calculateTotalDuration(measureDurations),
+            validateRepetitionMarks: (totalMeasures) => 
+                this.modules.repetitionEngine.validateRepetitionMarks(totalMeasures)
+        };
+    }
+
+    /**
      * Gibt Komplette API zurück
      */
     getCompleteAPI() {
@@ -218,7 +299,9 @@ class FeaturesIntegration {
             audioExport: this.getAudioExportAPI(),
             drumNotation: this.getDrumNotationAPI(),
             performanceMode: this.getPerformanceModeAPI(),
-            jazzChords: this.getJazzChordsAPI()
+            jazzChords: this.getJazzChordsAPI(),
+            lyrics: this.getLyricsAPI(),
+            repetition: this.getRepetitionAPI()
         };
     }
 
