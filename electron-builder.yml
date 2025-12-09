@@ -23,12 +23,9 @@ nsis:
   installerIcon: icon.ico
   uninstallerIcon: icon.ico
   shortcutName: DScribe
-portable:
-  artifactName: ${productName}-${version}-portable.exe
 mac:
   target:
     - dmg
-    - zip
   icon: icon.ico
   category: public.app-category.music
 linux:

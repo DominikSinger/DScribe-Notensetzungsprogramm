@@ -1,7 +1,7 @@
 {
   "name": "dscribe",
-  "version": "12.0.0",
-  "description": "DScribe – Erweiterte OMR/Audio & Pluginsystem",
+  "version": "13.0.0",
+  "description": "DScribe – Vollständiges professionelles Notensatzprogramm mit erweiterten Harmonietools, Audio-Export und OMR",
   "main": "src/main.js",
   "author": "User",
   "license": "MIT",
@@ -9,7 +9,8 @@
     "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "dist:win": "electron-builder --win"
+    "dist:win": "electron-builder --win",
+    "dist:portable": "electron-builder --win --portable"
   },
   "dependencies": {
     "@tonejs/midi": "^2.0.28",
@@ -17,12 +18,11 @@
     "electron-store": "8.1.0",
     "fs-extra": "11.2.0",
     "jspdf": "^3.0.4",
+    "node-fetch": "^2.7.0",
     "opensheetmusicdisplay": "^1.9.2",
     "pitchfinder": "^2.3.2",
     "vexflow": "^5.0.0",
-    "xml2js": "^0.6.2",
-    "lamejs": "^2.1.0",
-    "pdfjs-dist": "^3.11.174"
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "electron": "30.0.9",

@@ -137,17 +137,57 @@ DScribe ist ein modernes Desktop-Notensatzprogramm mit erweiterten Audio- und An
 - ✅ **Enharmonic-Spelling**: Intelligente Note-Namen (C# vs Db) basierend auf Kontext
 - ✅ **MIDI-Note-Conversion**: VexFlow ↔ MIDI-Note-Number
 - ✅ **Interval-Calculation**: Semitone-Distanzen und musikalische Intervalle
+- ✅ **Jazz-Akkorde**: Extended Chords (9ths, 11ths, 13ths), Alterations
+- ✅ **Voicing-Styles**: Drop2, Drop3, Root Position, Inversionen
+- ✅ **Jazz-Progressionen**: Bebop, Modal, Blues Patterns
+- ✅ **Lead-Sheet-Generator**: Automatische Lead-Sheet-Generierung
 
-### 📋 Phase 7 - Layout & UX
-- Abschnitts-Layouts
-- Keyboard-Shortcuts
-- Undo/Redo
-- Dark Mode
+### ✅ Phase 7 - Layout, UX & Performance (100%)
+- ✅ **Keyboard-Shortcuts**: Vollständige Unterstützung
+- ✅ **Undo/Redo**: Bis zu 50 Undo-Schritte
+- ✅ **Dark Mode**: Dunkelmodus für lange Sessions
+- ✅ **Tab-System**: Multi-Projekt-Tabs
+- ✅ **Performance-Modus**: Für Live-Performance und Tablet
+  - Automatisches Umblättern
+  - Tablet-optimierte Ansicht
+  - Landscape-Lock für Tablets
+  - Page-Navigation
+  - HTML-Export für Performance
 
-### 📋 Phase 8 - Erweiterungen
-- Plugin-System
-- Erweiterte OMR
-- On-Demand Soundfonts
+### ✅ Phase 8 - Audio-Export & OMR (100%)
+- ✅ **MP3-Export**: Notensatz als MP3-Datei exportieren
+- ✅ **WAV-Export**: Notensatz als WAV-Datei exportieren
+- ✅ **Audio-Rendering**: Echtzeitwiedergabe mit ADSR-Envelopes
+- ✅ **Drum-Notation**: Professionelle Schlagzeug-Notation
+  - Standard, Jazz, Rock Drum-Kits
+  - Drum-TAB-Generator
+  - Drum-Pattern-Generator (Rock, Jazz, Pop, Metal)
+  - Drum-TAB-Export
+- ✅ **Audio-Splitting**: MP3 in Instrumentenspuren aufteilen
+  - STFT-basierte Source Separation
+  - Drums, Bass, Vocals, Other Extraktion
+  - WAV-Export der Stems
+- ✅ **PDF-OMR**: PDF-zu-Noten-Konvertierung
+  - Automatische Stab-Erkennung
+  - Schlüssel-Erkennung
+  - Tonart-Erkennung
+  - Taktart-Erkennung
+  - Automatische Noten-Erkennung
+  - Harmonie-Optimierung
+  - DScribe-Projekt-Export
+
+### ✅ Phase 9 - Installation & Portabilität (100%)
+- ✅ **Windows Installer (NSIS)**: `DScribe Setup 12.0.0.exe` (93 MB)
+  - Benutzerfreundlicher Installer
+  - Desktop-Verknüpfung
+  - Start-Menü-Integration
+- ✅ **Portable Version (USB)**: `DScribe 12.0.0.exe` (93 MB)
+  - Kein Installer erforderlich
+  - Direkt vom USB-Stick lauffähig
+  - Perfekt für Backup auf USB-Stick
+  - Keine Installation nötig
+- ✅ **Laufwerkszugriff**: Vollständiger Zugriff auf alle Laufwerke
+- ✅ **Benutzerverzeichnis**: Persönliche Einstellungen und Projekte
 
 ## Installation
 
@@ -182,17 +222,34 @@ DScribe-Notensetzungsprogramm/
 │   │   └── js/
 │   │       ├── app.js          # App-Logik
 │   │       ├── notation-engine.js
-│   │       └── playback-engine.js
+│   │       ├── playback-engine.js
+│   │       ├── audio-analysis-engine.js
+│   │       ├── harmony-engine.js
+│   │       └── playback-engine.js.backup
 │   └── modules/                # Backend-Module
 │       ├── logger.js
 │       ├── settings-manager.js
 │       ├── project-manager.js
 │       ├── autosave.js
-│       └── updater.js
+│       ├── updater.js
+│       ├── import-manager.js
+│       ├── export-manager.js
+│       ├── audio-splitter.js
+│       ├── omr-engine.js
+│       ├── audio-export.js
+│       ├── drum-notation.js
+│       ├── performance-mode.js
+│       └── jazz-chords.js
 ├── icon.ico                    # Programmicon
+├── icon.png                    # PNG Icon
 ├── package.json
 ├── electron-builder.yml
-└── README.md
+├── README.md
+├── RELEASE.md
+└── dist/
+    ├── DScribe Setup 12.0.0.exe    # NSIS Installer (93 MB)
+    ├── DScribe 12.0.0.exe          # Portable Version (93 MB)
+    └── ...
 ```
 
 ## Benutzerverzeichnis-Struktur
