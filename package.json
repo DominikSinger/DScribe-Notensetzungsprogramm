@@ -1,6 +1,6 @@
 {
   "name": "dscribe",
-  "version": "13.0.0",
+  "version": "1.0.0",
   "description": "DScribe – Vollständiges professionelles Notensatzprogramm mit erweiterten Harmonietools, Audio-Export und OMR",
   "main": "src/main.js",
   "author": "User",
@@ -23,8 +23,10 @@
     "electron-store": "8.1.0",
     "fs-extra": "11.2.0",
     "jspdf": "^3.0.4",
+    "lamejs": "^1.2.1",
     "node-fetch": "^2.7.0",
     "opensheetmusicdisplay": "^1.9.2",
+    "pdfjs-dist": "^4.1.0",
     "pitchfinder": "^2.3.2",
     "vexflow": "^5.0.0",
     "xml2js": "^0.6.2"

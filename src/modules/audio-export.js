@@ -4,6 +4,7 @@
 
 const fs = require('fs-extra');
 const path = require('path');
+const lamejs = require('lamejs');
 
 class AudioExport {
     constructor(logger) {
@@ -41,33 +42,78 @@ class AudioExport {
     }
 
     /**
-     * Exportiert als MP3 (via WAV-Konvertierung)
+     * Exportiert als MP3 mit echtem Encoding
      */
     async exportToMP3(projectData, outputPath, instruments = {}) {
         try {
             this.logger.info('Exporting to MP3:', outputPath);
 
-            // Generiere WAV
-            const wavPath = outputPath.replace('.mp3', '_temp.wav');
-            const wavResult = await this.exportToWAV(projectData, wavPath, instruments);
+            // Generiere Audio-Buffer
+            const audioBuffer = await this.generateAudioBuffer(projectData, instruments);
 
-            if (!wavResult.success) {
-                throw new Error('Failed to generate WAV');
-            }
+            // Konvertiere zu MP3 mittels lamejs
+            const mp3Data = this.encodeToMP3(audioBuffer);
 
-            // In echter Impl. würde hier MP3-Encoding stattfinden
-            // Für diese Demo: Kopiere WAV als Fallback
-            const mp3Data = await fs.readFile(wavPath);
-            await fs.writeFile(outputPath, mp3Data);
-            await fs.remove(wavPath);
+            // Speichere Datei
+            await fs.writeFile(outputPath, Buffer.from(mp3Data));
 
             this.logger.info('MP3 exported successfully');
-            return { success: true, path: outputPath };
+            return { success: true, path: outputPath, size: mp3Data.length };
 
         } catch (error) {
             this.logger.error('MP3 export failed:', error);
             return { success: false, error: error.message };
         }
+    }
+
+    /**
+     * Kodiert Audio-Buffer zu MP3 mittels lamejs
+     */
+    encodeToMP3(audioBuffer) {
+        const LEFT_CHANNEL = 0;
+        const RIGHT_CHANNEL = 1;
+        const SAMPLES_PER_FRAME = 1152;
+
+        // MP3-Encoder-Setup
+        const encoder = new lamejs.Mp3Encoder(2, this.sampleRate, 128); // Stereo, 44.1kHz, 128kbps
+        
+        const mp3Data = [];
+        
+        // Verarbeite Audio in Frames
+        for (let i = 0; i < audioBuffer.length; i += SAMPLES_PER_FRAME) {
+            const leftChunk = audioBuffer.subarray(i, i + SAMPLES_PER_FRAME);
+            const rightChunk = audioBuffer.subarray(i, i + SAMPLES_PER_FRAME);
+            
+            // lamejs benötigt Int16Array
+            const leftInt16 = this.floatToInt16(leftChunk);
+            const rightInt16 = this.floatToInt16(rightChunk);
+            
+            const mp3buf = encoder.encodeBuffer(leftInt16, rightInt16);
+            if (mp3buf.length > 0) {
+                mp3Data.push(mp3buf);
+            }
+        }
+
+        // Flush encoder
+        const finalBuf = encoder.flush();
+        if (finalBuf.length > 0) {
+            mp3Data.push(finalBuf);
+        }
+
+        // Kombiniere alle MP3-Daten
+        return new Uint8Array(mp3Data.reduce((acc, val) => [...acc, ...val], []));
+    }
+
+    /**
+     * Konvertiert Float32 zu Int16
+     */
+    floatToInt16(floatArray) {
+        const int16 = new Int16Array(floatArray.length);
+        for (let i = 0; i < floatArray.length; i++) {
+            const value = Math.max(-1, Math.min(1, floatArray[i]));
+            int16[i] = value < 0 ? value * 0x8000 : value * 0x7FFF;
+        }
+        return int16;
     }
 
     /**

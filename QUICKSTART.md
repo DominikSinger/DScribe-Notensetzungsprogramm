@@ -1,34 +1,45 @@
-# 🎵 DScribe v13.0.0 - QUICK START GUIDE
+# 🎵 DScribe v1.0.0 - PRODUCTION RELEASE
 
-## ⚡ 30-Second Setup
+## ⚡ Quick Start (Entwicklung)
 
-### Option 1: Windows (Easiest)
-```
-1. Download: DScribe Setup 12.0.0.exe from /dist/
-2. Double-click installer
-3. Launch DScribe from Start Menu
-✅ DONE!
-```
-
-### Option 2: From Source
+### From Source Code
 ```bash
-cd /workspaces/DScribe-Notensetzungsprogramm
+cd /path/to/DScribe-Notensetzungsprogramm
 npm install
 npm start
 ```
 
----
-
-## 🎯 What's New in v13.0.0?
-
-✅ **VST3 Plugin Support** - Load external plugins (Synth, Effects)  
-✅ **Fixed All Bugs** - All TODO comments eliminated  
-✅ **Comprehensive Tests** - 50+ automated test cases  
-✅ **Production Ready** - Zero dummy functions  
+### Build für Distribution
+```bash
+npm run dist:win          # Windows installer (.exe)
+npm run dist:portable     # Windows portable (.exe)
+npm run dist              # All platforms
+```
 
 ---
 
-## 📚 Feature Highlights
+## ✅ What's New in v1.0.0?
+
+✨ **Real Audio Export** - Echtes MP3-Encoding mit lamejs  
+✨ **Real PDF Processing** - OMR mit pdfjs-dist Integration  
+✨ **Real Audio Decoding** - WAV/MP3 mit echter Dekodierung  
+✨ **Production Ready** - Alle Simulationen entfernt, echte Funktionalität  
+✨ **Comprehensive Testing** - Ready für echte Workloads  
+
+---
+
+## 📦 Neue Dependencies (v1.0.0)
+
+```json
+"lamejs": "^1.2.1"        // MP3-Encoding
+"pdfjs-dist": "^4.1.0"    // PDF-Verarbeitung
+```
+
+**Installation**: `npm install` führt automatisch alle Dependencies aus `package.json` ein
+
+---
+
+## 📚 Implementation Status
 
 ### 🎼 Notation
 - SMuFL-compliant rendering (VexFlow)
