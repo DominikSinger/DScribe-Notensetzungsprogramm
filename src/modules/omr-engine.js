@@ -14,12 +14,45 @@ try {
     // pdfjs-dist nicht verfügbar - verwende Hilfsmittel
 }
 
+// OCR für Text-Erkennung
+let tesseract = null;
+try {
+    tesseract = require('tesseract.js');
+} catch (e) {
+    // tesseract.js nicht verfügbar
+}
+
 class OMREngine {
     constructor(logger) {
         this.logger = logger;
         this.staffLines = [];
         this.detectedNotes = [];
         this.isProcessing = false;
+        this.ocrWorker = null;
+
+        // Initialize OCR if available
+        this.initializeOCR();
+    }
+
+    /**
+     * Initialize OCR worker
+     */
+    async initializeOCR() {
+        if (!tesseract) {
+            this.logger.warn('tesseract.js not available - OCR features disabled');
+            return;
+        }
+
+        try {
+            this.logger.info('Initializing OCR engine...');
+            this.ocrWorker = await tesseract.createWorker();
+            await this.ocrWorker.loadLanguage('eng');
+            await this.ocrWorker.initialize('eng');
+            this.logger.info('OCR engine initialized');
+        } catch (error) {
+            this.logger.warn('OCR initialization failed:', error.message);
+            this.ocrWorker = null;
+        }
     }
 
     /**
@@ -55,7 +88,10 @@ class OMREngine {
             if (progressCallback) progressCallback(20, 'Extracting pages...');
             const pages = await this.extractPDFPages(pdfData.buffer);
 
-            if (progressCallback) progressCallback(30, 'Detecting staves...');
+            if (progressCallback) progressCallback(25, 'Performing OCR...');
+            const ocrResults = await this.performOCR(pages);
+
+            if (progressCallback) progressCallback(35, 'Detecting staves...');
             const allStaves = [];
             for (const page of pages) {
                 const staves = await this.detectStavesInPage(page);
@@ -388,6 +424,81 @@ class OMREngine {
         } catch (error) {
             this.logger.error('Failed to export project:', error);
             return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Perform OCR on PDF pages
+     */
+    async performOCR(pages) {
+        if (!this.ocrWorker) {
+            this.logger.warn('OCR not available, skipping text recognition');
+            return { text: '', confidence: 0 };
+        }
+
+        try {
+            this.logger.info('Performing OCR on PDF pages...');
+            let allText = '';
+            let totalConfidence = 0;
+            let pageCount = 0;
+
+            for (const page of pages) {
+                if (page.imageData) {
+                    // Convert imageData to canvas for OCR
+                    const canvas = this.imageDataToCanvas(page.imageData);
+                    const { data: { text, confidence } } = await this.ocrWorker.recognize(canvas);
+
+                    allText += text + '\n';
+                    totalConfidence += confidence;
+                    pageCount++;
+                }
+            }
+
+            const averageConfidence = pageCount > 0 ? totalConfidence / pageCount : 0;
+
+            this.logger.info(`OCR completed with ${averageConfidence.toFixed(1)}% confidence`);
+            return {
+                text: allText.trim(),
+                confidence: averageConfidence,
+                pagesProcessed: pageCount
+            };
+
+        } catch (error) {
+            this.logger.warn('OCR failed:', error.message);
+            return { text: '', confidence: 0 };
+        }
+    }
+
+    /**
+     * Convert ImageData to Canvas for OCR
+     */
+    imageDataToCanvas(imageData) {
+        // Create a simple canvas-like object for tesseract
+        return {
+            width: imageData.width,
+            height: imageData.height,
+            toDataURL: () => {
+                // Convert ImageData to base64 data URL
+                const canvas = document.createElement('canvas');
+                canvas.width = imageData.width;
+                canvas.height = imageData.height;
+                const ctx = canvas.getContext('2d');
+                ctx.putImageData(imageData, 0, 0);
+                return canvas.toDataURL('image/png');
+            },
+            getContext: () => ({
+                getImageData: () => imageData
+            })
+        };
+    }
+
+    /**
+     * Cleanup OCR worker
+     */
+    async cleanup() {
+        if (this.ocrWorker) {
+            await this.ocrWorker.terminate();
+            this.ocrWorker = null;
         }
     }
 }

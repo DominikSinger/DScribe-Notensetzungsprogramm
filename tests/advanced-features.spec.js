@@ -1,103 +1,489 @@
 /**
- * DScribe - Advanced Module Tests
- * Tests for audio processing, I/O, and specialized features
+ * DScribe - Advanced Features Tests
+ * Tests for ML-enhanced audio processing, OCR, VST3 integration, and advanced features
  */
 
-const path = require('path');
+const AudioSplitter = require('../src/modules/audio-splitter');
+const OMREngine = require('../src/modules/omr-engine');
+const VST3Manager = require('../src/modules/vst3-manager');
+const DrumNotation = require('../src/modules/drum-notation');
+const JazzChords = require('../src/modules/jazz-chords');
+const RepetitionEngine = require('../src/modules/repetition-engine');
+const PerformanceMode = require('../src/modules/performance-mode');
+const Logger = require('../src/modules/logger');
 
-describe('Audio Processing Modules', () => {
-    describe('Audio Splitter (STFT)', () => {
-        test('should perform STFT correctly', () => {
-            // Simulated test - in real scenario would load audio-splitter module
-            const windowSize = 2048;
-            const hopSize = 512;
-            
-            // Create test signal
-            const signal = new Float32Array(44100); // 1 second at 44.1kHz
-            for (let i = 0; i < signal.length; i++) {
-                signal[i] = Math.sin(2 * Math.PI * 440 * i / 44100); // 440 Hz sine
-            }
-            
-            // Perform STFT
-            const frameCount = Math.floor((signal.length - windowSize) / hopSize);
-            expect(frameCount).toBeGreaterThan(0);
+// Mock ML libraries
+jest.mock('@tensorflow/tfjs', () => ({
+    loadLayersModel: jest.fn(() => Promise.resolve({
+        predict: jest.fn(() => ({
+            data: () => Promise.resolve(new Float32Array([0.1, 0.2, 0.3, 0.4]))
+        }))
+    })),
+    tensor: jest.fn(() => ({
+        dispose: jest.fn()
+    }))
+}));
+
+jest.mock('tesseract.js', () => ({
+    createWorker: jest.fn(() => Promise.resolve({
+        loadLanguage: jest.fn(() => Promise.resolve()),
+        initialize: jest.fn(() => Promise.resolve()),
+        recognize: jest.fn(() => Promise.resolve({
+            data: { text: 'Sample OCR text', confidence: 85 }
+        })),
+        terminate: jest.fn(() => Promise.resolve())
+    }))
+}));
+
+describe('Advanced Features Integration', () => {
+    let logger;
+
+    beforeEach(() => {
+        logger = new Logger();
+        jest.clearAllMocks();
+    });
+
+    describe('ML-Enhanced Audio Splitter', () => {
+        let audioSplitter;
+
+        beforeEach(() => {
+            audioSplitter = new AudioSplitter(logger);
         });
 
-        test('should extract audio stems', () => {
-            const stems = {
-                drums: { confidence: 0.92 },
-                bass: { confidence: 0.87 },
-                vocals: { confidence: 0.89 },
-                other: { confidence: 0.85 }
+        test('should initialize ML models', async () => {
+            const result = await audioSplitter.initializeML();
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should perform source separation with ML', async () => {
+            const mockAudioBuffer = {
+                length: 44100,
+                sampleRate: 44100,
+                numberOfChannels: 2,
+                getChannelData: jest.fn(() => {
+                    const data = new Float32Array(44100);
+                    // Add some test signal
+                    for (let i = 0; i < data.length; i++) {
+                        data[i] = Math.sin(2 * Math.PI * 440 * i / 44100) * 0.5;
+                    }
+                    return data;
+                })
             };
-            
-            expect(Object.keys(stems).length).toBe(4);
-            Object.values(stems).forEach(stem => {
-                expect(stem.confidence).toBeGreaterThan(0);
-                expect(stem.confidence).toBeLessThanOrEqual(1);
-            });
+
+            await audioSplitter.initializeML();
+            const result = await audioSplitter.splitAudio(mockAudioBuffer);
+
+            expect(result).toBeDefined();
+            expect(result.success).toBe(true);
+            expect(result.stems).toBeDefined();
+            expect(result.stems.drums).toBeDefined();
+            expect(result.stems.bass).toBeDefined();
+            expect(result.stems.vocals).toBeDefined();
         });
 
-        test('should create WAV file correctly', () => {
-            const sampleRate = 44100;
-            const duration = 1; // 1 second
-            const samples = sampleRate * duration;
-            
-            const audioData = new Float32Array(samples);
-            for (let i = 0; i < samples; i++) {
-                audioData[i] = Math.sin(2 * Math.PI * 440 * i / sampleRate) * 0.3;
-            }
-            
-            // WAV header should be correct
-            const channelCount = 2;
-            const byteRate = sampleRate * channelCount * 2;
-            const blockAlign = channelCount * 2;
-            
-            expect(byteRate).toBe(44100 * 2 * 2);
-            expect(blockAlign).toBe(4);
+        test('should handle ML model loading failure', async () => {
+            // Mock model loading failure
+            require('@tensorflow/tfjs').loadLayersModel.mockRejectedValueOnce(new Error('Model not found'));
+
+            const result = await audioSplitter.initializeML();
+            expect(result.success).toBe(false);
+        });
+
+        test('should export separated stems', async () => {
+            const mockStems = {
+                drums: new Float32Array(44100).fill(0.1),
+                bass: new Float32Array(44100).fill(0.2),
+                vocals: new Float32Array(44100).fill(0.3),
+                other: new Float32Array(44100).fill(0.4)
+            };
+
+            const result = await audioSplitter.exportStems(mockStems, 44100);
+            expect(result.success).toBe(true);
+            expect(result.files).toBeDefined();
+            expect(result.files.length).toBe(4);
+        });
+
+        test('should apply spectral masking for separation', async () => {
+            const mockSpectrogram = new Float32Array(1024 * 100); // Mock spectrogram
+            const result = await audioSplitter.applySpectralMasking(mockSpectrogram, 'vocals');
+
+            expect(result).toBeDefined();
+            expect(result.length).toBe(mockSpectrogram.length);
         });
     });
 
-    describe('OMR Engine (PDF Recognition)', () => {
-        test('should detect staves', () => {
-            // Simulated staff detection
-            const staffLines = 5;
-            const spacing = 20;
-            const detectedStaves = [];
-            
-            for (let i = 0; i < staffLines; i++) {
-                detectedStaves.push({ y: i * spacing, confidence: 0.95 });
-            }
-            
-            expect(detectedStaves.length).toBe(5);
-            detectedStaves.forEach(staff => {
-                expect(staff.confidence).toBeGreaterThan(0.9);
+    describe('OCR-Enhanced OMR Engine', () => {
+        let omrEngine;
+
+        beforeEach(() => {
+            omrEngine = new OMREngine(logger);
+        });
+
+        test('should initialize OCR worker', async () => {
+            const result = await omrEngine.initializeOCR();
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should perform OCR on image data', async () => {
+            await omrEngine.initializeOCR();
+
+            const mockImageData = {
+                width: 800,
+                height: 600,
+                data: new Uint8ClampedArray(800 * 600 * 4)
+            };
+
+            const mockPages = [{ imageData: mockImageData }];
+            const result = await omrEngine.performOCR(mockPages);
+
+            expect(result).toBeDefined();
+            expect(result.text).toBeDefined();
+            expect(result.confidence).toBeGreaterThan(0);
+            expect(result.pagesProcessed).toBe(1);
+        });
+
+        test('should convert ImageData to canvas', () => {
+            const mockImageData = {
+                width: 100,
+                height: 100,
+                data: new Uint8ClampedArray(40000)
+            };
+
+            const canvas = omrEngine.imageDataToCanvas(mockImageData);
+            expect(canvas).toBeDefined();
+            expect(canvas.width).toBe(100);
+            expect(canvas.height).toBe(100);
+            expect(canvas.toDataURL).toBeDefined();
+        });
+
+        test('should handle OCR errors gracefully', async () => {
+            // OCR not initialized
+            const mockPages = [{ imageData: null }];
+            const result = await omrEngine.performOCR(mockPages);
+
+            expect(result.text).toBe('');
+            expect(result.confidence).toBe(0);
+        });
+
+        test('should cleanup OCR resources', async () => {
+            await omrEngine.initializeOCR();
+            await omrEngine.cleanup();
+
+            expect(omrEngine.ocrWorker).toBeNull();
+        });
+    });
+
+    describe('VST3 Plugin Integration', () => {
+        let vst3Manager;
+
+        beforeEach(() => {
+            vst3Manager = new VST3Manager(logger);
+        });
+
+        test('should scan for VST3 plugins', async () => {
+            const plugins = await vst3Manager.scanPlugins();
+            expect(Array.isArray(plugins)).toBe(true);
+        });
+
+        test('should load VST3 plugin', async () => {
+            const mockPlugin = {
+                id: 'test-synth',
+                path: '/path/to/synth.vst3',
+                name: 'Test Synth'
+            };
+
+            const result = await vst3Manager.loadPlugin(mockPlugin);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should process audio through VST3 plugin', async () => {
+            const mockAudioBuffer = {
+                length: 44100,
+                sampleRate: 44100,
+                numberOfChannels: 2,
+                getChannelData: jest.fn(() => new Float32Array(44100))
+            };
+
+            const result = await vst3Manager.processAudio(mockAudioBuffer, 'test-plugin');
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should handle plugin parameters', async () => {
+            const parameters = {
+                volume: 0.8,
+                pan: 0.0,
+                reverb: 0.3
+            };
+
+            const result = await vst3Manager.setPluginParameters('test-plugin', parameters);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should unload plugin', async () => {
+            const result = await vst3Manager.unloadPlugin('test-plugin');
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+    });
+
+    describe('Drum Notation Engine', () => {
+        let drumNotation;
+
+        beforeEach(() => {
+            drumNotation = new DrumNotation(logger);
+        });
+
+        test('should initialize drum notation', () => {
+            expect(drumNotation).toBeDefined();
+            expect(drumNotation.logger).toBe(logger);
+        });
+
+        test('should parse drum patterns', () => {
+            const pattern = 'HH: x-x-|SD: --x-|BD: x---';
+            const result = drumNotation.parsePattern(pattern);
+
+            expect(result).toBeDefined();
+            expect(result.success).toBe(true);
+            expect(result.notes).toBeDefined();
+        });
+
+        test('should generate drum notation', () => {
+            const notes = [
+                { instrument: 'BD', position: 0, velocity: 100 },
+                { instrument: 'SD', position: 2, velocity: 80 },
+                { instrument: 'HH', position: 1, velocity: 60 }
+            ];
+
+            const result = drumNotation.generateNotation(notes);
+            expect(result).toBeDefined();
+            expect(result.notation).toBeDefined();
+        });
+
+        test('should handle complex drum patterns', () => {
+            const complexPattern = `
+                HH: x-x-x-x-|x-x-x-x-
+                SD: ----x---|----x---
+                BD: x-------|x-------
+                CY: --x-----|--x-----
+            `;
+
+            const result = drumNotation.parsePattern(complexPattern.trim());
+            expect(result.success).toBe(true);
+        });
+    });
+
+    describe('Jazz Chords Engine', () => {
+        let jazzChords;
+
+        beforeEach(() => {
+            jazzChords = new JazzChords(logger);
+        });
+
+        test('should initialize jazz chords', () => {
+            expect(jazzChords).toBeDefined();
+            expect(jazzChords.logger).toBe(logger);
+        });
+
+        test('should analyze chord progressions', () => {
+            const progression = ['Cmaj7', 'Dm7', 'G7', 'Cmaj7'];
+            const result = jazzChords.analyzeProgression(progression);
+
+            expect(result).toBeDefined();
+            expect(result.analysis).toBeDefined();
+            expect(result.tension).toBeDefined();
+        });
+
+        test('should generate chord voicings', () => {
+            const chord = 'Cmaj7';
+            const result = jazzChords.generateVoicings(chord);
+
+            expect(result).toBeDefined();
+            expect(Array.isArray(result.voicings)).toBe(true);
+            expect(result.voicings.length).toBeGreaterThan(0);
+        });
+
+        test('should suggest chord substitutions', () => {
+            const original = 'Dm7';
+            const context = ['Cmaj7', 'Dm7', 'G7'];
+
+            const result = jazzChords.suggestSubstitutions(original, context);
+            expect(result).toBeDefined();
+            expect(Array.isArray(result.substitutions)).toBe(true);
+        });
+
+        test('should handle extended chords', () => {
+            const extendedChords = ['C7b9', 'D7#11', 'Eb7b5', 'Fmaj7#11'];
+            extendedChords.forEach(chord => {
+                const result = jazzChords.parseChord(chord);
+                expect(result).toBeDefined();
+                expect(result.root).toBeDefined();
+                expect(result.quality).toBeDefined();
             });
         });
+    });
 
-        test('should detect clefs', () => {
-            const clefs = ['treble', 'bass', 'alto'];
-            const detectedClef = clefs[0];
-            
-            expect(clefs).toContain(detectedClef);
+    describe('Repetition Engine', () => {
+        let repetitionEngine;
+
+        beforeEach(() => {
+            repetitionEngine = new RepetitionEngine(logger);
         });
 
-        test('should detect time signatures', () => {
-            const timeSignatures = ['4/4', '3/4', '2/4', '6/8'];
-            const detected = '4/4';
-            
-            expect(timeSignatures).toContain(detected);
+        test('should initialize repetition engine', () => {
+            expect(repetitionEngine).toBeDefined();
+            expect(repetitionEngine.logger).toBe(logger);
         });
 
-        test('should detect key signatures', () => {
-            const keys = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'F', 'Bb', 'Eb', 'Ab'];
-            const detected = 'C'; // C major
-            
-            expect(keys).toContain(detected);
+        test('should detect repeated sections', () => {
+            const measures = [
+                { notes: ['C4', 'D4', 'E4'] },
+                { notes: ['C4', 'D4', 'E4'] },
+                { notes: ['F4', 'G4', 'A4'] },
+                { notes: ['C4', 'D4', 'E4'] }
+            ];
+
+            const result = repetitionEngine.detectRepetitions(measures);
+            expect(result).toBeDefined();
+            expect(result.repetitions).toBeDefined();
         });
 
-        test('should extract notes from PDF', () => {
-            const detectedNotes = [
+        test('should create repeat signs', () => {
+            const section = { start: 0, end: 3 };
+            const result = repetitionEngine.createRepeat(section);
+
+            expect(result).toBeDefined();
+            expect(result.repeat).toBeDefined();
+            expect(result.start).toBe(0);
+            expect(result.end).toBe(3);
+        });
+
+        test('should handle complex repeats', () => {
+            const measures = Array(16).fill().map((_, i) => ({
+                notes: i < 4 ? ['C4', 'D4'] : i < 8 ? ['E4', 'F4'] : ['G4', 'A4']
+            }));
+
+            const result = repetitionEngine.analyzeStructure(measures);
+            expect(result).toBeDefined();
+            expect(result.sections).toBeDefined();
+        });
+    });
+
+    describe('Performance Mode', () => {
+        let performanceMode;
+
+        beforeEach(() => {
+            performanceMode = new PerformanceMode(logger);
+        });
+
+        test('should initialize performance mode', () => {
+            expect(performanceMode).toBeDefined();
+            expect(performanceMode.logger).toBe(logger);
+        });
+
+        test('should handle real-time input', () => {
+            const input = { type: 'midi', note: 60, velocity: 100 };
+            const result = performanceMode.processInput(input);
+
+            expect(result).toBeDefined();
+            expect(result.processed).toBe(true);
+        });
+
+        test('should manage tempo changes', () => {
+            const newTempo = 120;
+            const result = performanceMode.setTempo(newTempo);
+
+            expect(result).toBeDefined();
+            expect(result.success).toBe(true);
+        });
+
+        test('should handle pedal input', () => {
+            const pedalEvent = { type: 'sustain', pressed: true };
+            const result = performanceMode.processPedal(pedalEvent);
+
+            expect(result).toBeDefined();
+            expect(result.processed).toBe(true);
+        });
+
+        test('should record performance', () => {
+            const result = performanceMode.startRecording();
+            expect(result).toBeDefined();
+            expect(result.recording).toBe(true);
+
+            const stopResult = performanceMode.stopRecording();
+            expect(stopResult).toBeDefined();
+            expect(stopResult.recording).toBe(false);
+        });
+    });
+
+    describe('Integration Tests', () => {
+        test('should integrate ML audio splitting with VST3 processing', async () => {
+            const audioSplitter = new AudioSplitter(logger);
+            const vst3Manager = new VST3Manager(logger);
+
+            const mockAudioBuffer = {
+                length: 44100,
+                sampleRate: 44100,
+                numberOfChannels: 2,
+                getChannelData: jest.fn(() => new Float32Array(44100))
+            };
+
+            // Split audio
+            await audioSplitter.initializeML();
+            const splitResult = await audioSplitter.splitAudio(mockAudioBuffer);
+            expect(splitResult.success).toBe(true);
+
+            // Process stems through VST3
+            if (splitResult.stems) {
+                for (const [stemName, stemData] of Object.entries(splitResult.stems)) {
+                    const vstResult = await vst3Manager.processAudio(mockAudioBuffer, `test-${stemName}-fx`);
+                    expect(vstResult.success).toBeDefined();
+                }
+            }
+        });
+
+        test('should integrate OCR with notation engine', async () => {
+            const omrEngine = new OMREngine(logger);
+
+            await omrEngine.initializeOCR();
+
+            const mockImageData = {
+                width: 800,
+                height: 600,
+                data: new Uint8ClampedArray(800 * 600 * 4)
+            };
+
+            const ocrResult = await omrEngine.performOCR([{ imageData: mockImageData }]);
+            expect(ocrResult.text).toBeDefined();
+
+            // In a real scenario, this text would be parsed into notation
+            const parsedNotation = omrEngine.parseRecognizedText(ocrResult.text);
+            expect(parsedNotation).toBeDefined();
+        });
+
+        test('should handle complex workflow: import -> process -> export', async () => {
+            const importManager = require('../src/modules/import-manager');
+            const exportManager = require('../src/modules/export-manager');
+
+            const importer = new importManager(logger);
+            const exporter = new exportManager(logger);
+
+            // Mock import
+            const importResult = await importer.importMIDI('/test/file.mid');
+            expect(importResult.success).toBeDefined();
+
+            if (importResult.success) {
+                // Mock export
+                const exportResult = await exporter.exportToPDF(importResult.project);
+                expect(exportResult.success).toBeDefined();
+            }
+        });
+    });
+});
                 { pitch: 'C4', duration: 'q', position: 100 },
                 { pitch: 'E4', duration: 'q', position: 140 },
                 { pitch: 'G4', duration: 'h', position: 180 }

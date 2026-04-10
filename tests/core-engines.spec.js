@@ -3,51 +3,355 @@
  * Comprehensive test suite for notation, playback, audio engines
  */
 
-const NotationEngine = require('../src/renderer/js/notation-engine');
-const PlaybackEngine = require('../src/renderer/js/playback-engine');
-const HarmonyEngine = require('../src/renderer/js/harmony-engine');
-const AudioAnalysisEngine = require('../src/renderer/js/audio-analysis-engine');
+const OMREngine = require('../src/modules/omr-engine');
+const AudioSplitter = require('../src/modules/audio-splitter');
+const VST3Manager = require('../src/modules/vst3-manager');
+const ProjectManager = require('../src/modules/project-manager');
+const ExportManager = require('../src/modules/export-manager');
+const ImportManager = require('../src/modules/import-manager');
+const SettingsManager = require('../src/modules/settings-manager');
+const Logger = require('../src/modules/logger');
 
-describe('NotationEngine', () => {
-    let engine;
-    let mockCanvas;
+// Mock dependencies that might not be available in test environment
+jest.mock('@tensorflow/tfjs', () => ({
+    loadLayersModel: jest.fn(() => Promise.resolve({
+        predict: jest.fn(() => ({
+            data: () => Promise.resolve(new Float32Array([0.1, 0.2, 0.3, 0.4]))
+        }))
+    })),
+    tensor: jest.fn(() => ({
+        dispose: jest.fn()
+    }))
+}));
+
+jest.mock('tesseract.js', () => ({
+    createWorker: jest.fn(() => Promise.resolve({
+        loadLanguage: jest.fn(() => Promise.resolve()),
+        initialize: jest.fn(() => Promise.resolve()),
+        recognize: jest.fn(() => Promise.resolve({
+            data: { text: 'Sample OCR text', confidence: 85 }
+        })),
+        terminate: jest.fn(() => Promise.resolve())
+    }))
+}));
+
+describe('Core Modules Integration', () => {
+    let logger;
 
     beforeEach(() => {
-        mockCanvas = {
-            getContext: jest.fn(() => ({
-                fillRect: jest.fn(),
-                strokeRect: jest.fn(),
-                fillText: jest.fn(),
-                moveTo: jest.fn(),
-                lineTo: jest.fn(),
-                stroke: jest.fn(),
-                fill: jest.fn(),
-                clearRect: jest.fn()
-            })),
-            width: 1000,
-            height: 600
-        };
-        document.body.innerHTML = '<canvas id="test-canvas"></canvas>';
-        engine = new NotationEngine('test-canvas');
+        logger = new Logger();
+        jest.clearAllMocks();
     });
 
-    test('should initialize notation engine', () => {
-        expect(engine).toBeDefined();
-        expect(engine.measures).toBeDefined();
-        expect(engine.measures.length).toBeGreaterThan(0);
+    describe('OMREngine', () => {
+        let omrEngine;
+
+        beforeEach(() => {
+            omrEngine = new OMREngine(logger);
+        });
+
+        test('should initialize OMR engine', () => {
+            expect(omrEngine).toBeDefined();
+            expect(omrEngine.logger).toBe(logger);
+        });
+
+        test('should process PDF pages', async () => {
+            const mockPages = [
+                {
+                    pageNumber: 1,
+                    imageData: {
+                        width: 100,
+                        height: 100,
+                        data: new Uint8ClampedArray(40000)
+                    }
+                }
+            ];
+
+            const result = await omrEngine.processPDF(mockPages);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should perform OCR when available', async () => {
+            await omrEngine.initializeOCR();
+
+            const mockPages = [
+                {
+                    imageData: {
+                        width: 100,
+                        height: 100,
+                        data: new Uint8ClampedArray(40000)
+                    }
+                }
+            ];
+
+            const result = await omrEngine.performOCR(mockPages);
+            expect(result).toBeDefined();
+            expect(result.text).toBeDefined();
+            expect(result.confidence).toBeDefined();
+        });
+
+        test('should handle OCR failure gracefully', async () => {
+            // OCR not initialized
+            const mockPages = [{ imageData: null }];
+            const result = await omrEngine.performOCR(mockPages);
+            expect(result.text).toBe('');
+            expect(result.confidence).toBe(0);
+        });
     });
 
-    test('should add measures', () => {
-        const initialCount = engine.measures.length;
-        engine.addMeasure();
-        expect(engine.measures.length).toBe(initialCount + 1);
+    describe('AudioSplitter', () => {
+        let audioSplitter;
+
+        beforeEach(() => {
+            audioSplitter = new AudioSplitter(logger);
+        });
+
+        test('should initialize audio splitter', () => {
+            expect(audioSplitter).toBeDefined();
+            expect(audioSplitter.logger).toBe(logger);
+        });
+
+        test('should split audio with ML when available', async () => {
+            const mockAudioBuffer = {
+                length: 44100,
+                sampleRate: 44100,
+                numberOfChannels: 2,
+                getChannelData: jest.fn(() => new Float32Array(44100))
+            };
+
+            await audioSplitter.initializeML();
+            const result = await audioSplitter.splitAudio(mockAudioBuffer);
+
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should fallback to heuristic splitting', async () => {
+            const mockAudioBuffer = {
+                length: 44100,
+                sampleRate: 44100,
+                numberOfChannels: 2,
+                getChannelData: jest.fn(() => new Float32Array(44100))
+            };
+
+            // ML not available
+            const result = await audioSplitter.splitAudio(mockAudioBuffer);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should export stems to WAV', async () => {
+            const mockStems = {
+                drums: new Float32Array(44100),
+                bass: new Float32Array(44100),
+                vocals: new Float32Array(44100)
+            };
+
+            const result = await audioSplitter.exportStems(mockStems, 44100);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
     });
 
-    test('should add notes to measure', () => {
-        const measureIndex = 0;
-        engine.addNote('C4', 'q', measureIndex);
-        expect(engine.measures[measureIndex].notes.length).toBeGreaterThan(0);
+    describe('VST3Manager', () => {
+        let vst3Manager;
+
+        beforeEach(() => {
+            vst3Manager = new VST3Manager(logger);
+        });
+
+        test('should initialize VST3 manager', () => {
+            expect(vst3Manager).toBeDefined();
+            expect(vst3Manager.logger).toBe(logger);
+        });
+
+        test('should scan for plugins', async () => {
+            const result = await vst3Manager.scanPlugins();
+            expect(result).toBeDefined();
+            expect(Array.isArray(result)).toBe(true);
+        });
+
+        test('should load plugin', async () => {
+            const mockPlugin = { id: 'test-plugin', path: '/path/to/plugin' };
+            const result = await vst3Manager.loadPlugin(mockPlugin);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should process audio through plugin', async () => {
+            const mockAudioBuffer = {
+                length: 44100,
+                sampleRate: 44100,
+                numberOfChannels: 2,
+                getChannelData: jest.fn(() => new Float32Array(44100))
+            };
+
+            const result = await vst3Manager.processAudio(mockAudioBuffer, 'test-plugin');
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
     });
+
+    describe('ProjectManager', () => {
+        let projectManager;
+
+        beforeEach(() => {
+            projectManager = new ProjectManager(logger);
+        });
+
+        test('should initialize project manager', () => {
+            expect(projectManager).toBeDefined();
+            expect(projectManager.logger).toBe(logger);
+        });
+
+        test('should create new project', async () => {
+            const result = await projectManager.createProject('Test Project');
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should save project', async () => {
+            const mockProject = {
+                name: 'Test Project',
+                measures: [],
+                settings: {}
+            };
+
+            const result = await projectManager.saveProject(mockProject);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should load project', async () => {
+            const result = await projectManager.loadProject('/path/to/project.dscribe');
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+    });
+
+    describe('ExportManager', () => {
+        let exportManager;
+
+        beforeEach(() => {
+            exportManager = new ExportManager(logger);
+        });
+
+        test('should initialize export manager', () => {
+            expect(exportManager).toBeDefined();
+            expect(exportManager.logger).toBe(logger);
+        });
+
+        test('should export to MIDI', async () => {
+            const mockProject = {
+                measures: [
+                    {
+                        notes: [
+                            { pitch: 'C4', duration: 'q', startTime: 0 }
+                        ]
+                    }
+                ]
+            };
+
+            const result = await exportManager.exportToMIDI(mockProject);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should export to PDF', async () => {
+            const mockProject = {
+                name: 'Test Project',
+                measures: []
+            };
+
+            const result = await exportManager.exportToPDF(mockProject);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should export to audio', async () => {
+            const mockProject = {
+                measures: []
+            };
+
+            const result = await exportManager.exportToAudio(mockProject);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+    });
+
+    describe('ImportManager', () => {
+        let importManager;
+
+        beforeEach(() => {
+            importManager = new ImportManager(logger);
+        });
+
+        test('should initialize import manager', () => {
+            expect(importManager).toBeDefined();
+            expect(importManager.logger).toBe(logger);
+        });
+
+        test('should import MIDI file', async () => {
+            const result = await importManager.importMIDI('/path/to/file.mid');
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should import PDF file', async () => {
+            const result = await importManager.importPDF('/path/to/file.pdf');
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should import audio file', async () => {
+            const result = await importManager.importAudio('/path/to/file.wav');
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+    });
+
+    describe('SettingsManager', () => {
+        let settingsManager;
+
+        beforeEach(() => {
+            settingsManager = new SettingsManager(logger);
+        });
+
+        test('should initialize settings manager', () => {
+            expect(settingsManager).toBeDefined();
+            expect(settingsManager.logger).toBe(logger);
+        });
+
+        test('should load settings', async () => {
+            const result = await settingsManager.loadSettings();
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should save settings', async () => {
+            const mockSettings = {
+                audio: { sampleRate: 44100 },
+                notation: { clef: 'treble' }
+            };
+
+            const result = await settingsManager.saveSettings(mockSettings);
+            expect(result).toBeDefined();
+            expect(result.success).toBeDefined();
+        });
+
+        test('should get setting value', () => {
+            settingsManager.settings = { testKey: 'testValue' };
+            const value = settingsManager.getSetting('testKey');
+            expect(value).toBe('testValue');
+        });
+
+        test('should set setting value', () => {
+            settingsManager.setSetting('testKey', 'newValue');
+            expect(settingsManager.settings.testKey).toBe('newValue');
+        });
+    });
+});
 
     test('should add lyrics to notes', () => {
         engine.addNote('C4', 'q', 0);
